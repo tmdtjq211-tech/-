@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RUBIK'S RACE - INSTANT RANKING</title>
+    <title>RUBIK'S RACE - PRO FINAL</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -15,7 +15,8 @@
         .card { background: var(--panel); padding: 25px; border-radius: 20px; width: 100%; max-width: 400px; border: 1px solid #333; text-align: center; }
         .btn { width: 100%; padding: 15px; background: var(--accent); color: #000; font-weight: bold; border: none; border-radius: 12px; cursor: pointer; margin-top: 10px; transition: 0.2s; }
         .btn-battle { background: var(--battle); color: white; }
-        
+        .btn-sub { background: #333; color: white; font-size: 0.8rem; padding: 10px; }
+
         .game-layout { display: flex; gap: 15px; width: 100%; justify-content: center; align-items: flex-start; flex-wrap: wrap; }
         .rank-container { width: 260px; display: flex; flex-direction: column; gap: 10px; }
         .rank-panel { background: var(--panel); padding: 12px; border-radius: 15px; border: 1px solid #333; }
@@ -41,9 +42,9 @@
     <div id="authScreen" class="screen active">
         <div class="card">
             <h1 style="color:var(--accent)">RUBIK'S RACE</h1>
-            <input type="text" id="nickInput" style="width:100%; padding:12px; margin-bottom:10px; background:#000; color:white; border:1px solid #444;" placeholder="닉네임">
-            <input type="email" id="email" style="width:100%; padding:12px; margin-bottom:10px; background:#000; color:white; border:1px solid #444;" placeholder="이메일">
-            <input type="password" id="password" style="width:100%; padding:12px; margin-bottom:10px; background:#000; color:white; border:1px solid #444;" placeholder="비밀번호">
+            <input type="text" id="nickInput" style="width:100%; padding:12px; margin-bottom:10px; background:#000; color:white; border:1px solid #444; border-radius:10px;" placeholder="닉네임">
+            <input type="email" id="email" style="width:100%; padding:12px; margin-bottom:10px; background:#000; color:white; border:1px solid #444; border-radius:10px;" placeholder="이메일">
+            <input type="password" id="password" style="width:100%; padding:12px; margin-bottom:10px; background:#000; color:white; border:1px solid #444; border-radius:10px;" placeholder="비밀번호">
             <button class="btn" onclick="handleAuth('login')">로그인</button>
             <button class="btn" onclick="handleAuth('signup')" style="background:#333; color:white;">회원가입</button>
         </div>
@@ -53,11 +54,11 @@
         <div class="card">
             <h2 style="color:var(--accent)">LOBBY</h2>
             <p><span id="displayNick" style="color:var(--accent); font-weight:bold;"></span>님 환영!</p>
-            <button class="btn" onclick="startSolo()">🏆 솔로 랭킹전</button>
-            <button class="btn btn-battle" onclick="findMatch()">⚔️ 실시간 레이스</button>
+            <button class="btn" onclick="startSolo()">🏆 솔로 랭킹전 (10단계)</button>
+            <button class="btn btn-battle" onclick="findMatch()">⚔️ 실시간 레이스 (+5/-3)</button>
             <div style="display:flex; gap:10px; margin-top:10px;">
-                <button class="btn" style="background:#222; color:white; flex:1" onclick="showMyPage()">👤 정보</button>
-                <button class="btn" style="background:#222; color:white; flex:1" onclick="auth.signOut()">🚪 로그아웃</button>
+                <button class="btn btn-sub" style="flex:1" onclick="showMyPage()">👤 마이페이지</button>
+                <button class="btn btn-sub" style="flex:1" onclick="auth.signOut()">🚪 로그아웃</button>
             </div>
             <button onclick="adminSeed()" style="margin-top:20px; font-size:10px; opacity:0.1; background:none; border:none; color:white;">Seed</button>
         </div>
@@ -65,13 +66,16 @@
 
     <div id="myPageScreen" class="screen">
         <div class="card">
-            <h2>MY STATUS</h2>
-            <div style="background:#111; padding:20px; border-radius:15px; border:1px solid #333;">
-                <p style="color:#888;">승점</p>
-                <h1 id="myScoreText" style="color:var(--battle); font-size:3rem;">0</h1>
-                <p id="myBestText" style="font-size:0.8rem; color:var(--gold);"></p>
+            <h2 style="color:var(--accent)">MY PAGE</h2>
+            <div style="background:#111; padding:20px; border-radius:15px; border:1px solid #333; text-align:left;">
+                <p style="color:#888; font-size:0.8rem; margin:5px 0;">배틀 총 승점</p>
+                <h2 id="myTotalScore" style="color:var(--battle); margin:0 0 15px 0;">0점</h2>
+                <p style="color:#888; font-size:0.8rem; margin:5px 0;">최고 도달 레벨</p>
+                <h2 id="myBestLv" style="color:var(--gold); margin:0 0 15px 0;">LV 0</h2>
+                <p style="color:#888; font-size:0.8rem; margin:5px 0;">최고 레벨 기록 시간</p>
+                <h2 id="myBestTime" style="color:#fff; margin:0;">0초</h2>
             </div>
-            <button class="btn" onclick="showScreen('lobbyScreen')">뒤로</button>
+            <button class="btn" onclick="showScreen('lobbyScreen')">로비로 돌아가기</button>
         </div>
     </div>
 
@@ -79,16 +83,15 @@
         <div class="card">
             <h2 style="color:var(--battle)">MATCHING...</h2>
             <div style="border:4px solid #333; border-top:4px solid var(--battle); border-radius:50%; width:40px; height:40px; animation:spin 1s linear infinite; margin:20px auto;"></div>
-            <p>상대를 찾는 중입니다...</p>
-            <button onclick="cancelMatch()" style="color:#888; border:none; background:none;">취소</button>
+            <button onclick="cancelMatch()" style="color:#888; border:none; background:none;">매칭 취소</button>
         </div>
     </div>
 
     <div id="gameScreen" class="screen">
         <div class="game-layout">
             <div class="rank-container">
-                <div class="rank-panel" style="border-color:var(--gold);"><div style="color:var(--gold); font-size:0.8rem;">👑 TOP 10</div><table class="rank-table"><tbody id="topRankList"></tbody></table></div>
-                <div class="rank-panel"><div style="color:var(--accent); font-size:0.8rem;">⚡ LIVE</div><table class="rank-table"><tbody id="liveFeedList"></tbody></table></div>
+                <div class="rank-panel" style="border-color:var(--gold);"><div style="color:var(--gold); font-size:0.8rem; margin-bottom:5px;">👑 TOP 10</div><table class="rank-table"><tbody id="topRankList"></tbody></table></div>
+                <div class="rank-panel"><div style="color:var(--accent); font-size:0.8rem; margin-bottom:5px;">⚡ LIVE FEED</div><table class="rank-table"><tbody id="liveFeedList"></tbody></table></div>
             </div>
             <div class="game-main">
                 <div class="game-header">
@@ -125,7 +128,7 @@
                     const d = snap.val();
                     userNickname = d ? d.nickname : user.email.split('@')[0];
                     document.getElementById('displayNick').innerText = userNickname;
-                    document.getElementById('myScoreText').innerText = d ? (d.score || 0) : 0;
+                    document.getElementById('myTotalScore').innerText = (d && d.score ? d.score : 0) + "점";
                     showScreen('lobbyScreen');
                     loadRankings();
                 });
@@ -139,21 +142,17 @@
         }
 
         function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); if(id==='gameScreen') resetEngine(); }
-        function showMyPage() { showScreen('myPageScreen'); }
-
+        
         const COLORS = ['red', 'blue', 'green', 'yellow', 'orange', 'white'];
         let board = [], target = [], empty = {r:4, c:4}, isRunning = false, startTime = 0, timerInterval;
 
         function startSolo() { isBattle = false; battleId = null; curLevel = 1; showScreen('gameScreen'); }
         
-        // [감독님 요청] 그만두기할 때 즉시 랭킹 등록 로직 추가
+        // [수정] 그만두기 버튼 클릭 시 즉시 랭킹 저장 (중복 덮어씌우기)
         function quitGame() {
             if (isRunning && !isBattle) {
                 const elapsed = Math.floor((Date.now() - startTime) / 1000);
-                if (elapsed > 1) { // 1초 이상 플레이했을 때만 등록
-                    saveRank(curLevel, elapsed);
-                    console.log("그만두기 기록 등록:", curLevel, elapsed);
-                }
+                if (elapsed > 1) { saveRank(curLevel, elapsed); }
             }
             isRunning = false; clearInterval(timerInterval);
             if(battleId) { db.ref(`activeBattles/${battleId}`).off(); db.ref(`activeBattles/${battleId}`).remove(); battleId = null; }
@@ -197,8 +196,12 @@
             const msg = document.getElementById('gimmickMsg');
             document.getElementById('lvText').innerText = isBattle ? "BATTLE" : `LV ${curLevel.toString().padStart(2,'0')}`;
             tb.style.animation = (!isBattle && curLevel===8) ? "blink 2s infinite" : "none";
-            if(!isBattle && curLevel >= 4 && curLevel <= 6) msg.innerText = "⚠ REVERSE MODE (좌우를 바꿔서 맞추세요!)";
-            else msg.innerText = "";
+            if(!isBattle) {
+                if(curLevel >= 4 && curLevel <= 6) msg.innerText = "⚠ REVERSE (좌우 반전!)";
+                else if(curLevel === 7) msg.innerText = "⚠ 90° ROTATION (시계방향 90도 돌려 맞추기!)";
+                else if(curLevel === 8) msg.innerText = "⚠ BLINKING (암기 모드!)";
+                else msg.innerText = "";
+            }
         }
 
         function move(r,c) {
@@ -211,12 +214,11 @@
             let match = true;
             for(let r=0; r<3; r++) {
                 for(let c=0; c<3; c++) {
-                    // 4~6단계: 정답지와 좌우 반대로 맞추기 로직
-                    if(!isBattle && curLevel >= 4 && curLevel <= 6) {
-                        if(board[r+1][c+1] !== target[r][2-c]) match = false;
-                    } else {
-                        if(board[r+1][c+1] !== target[r][c]) match = false;
-                    }
+                    if(!isBattle) {
+                        if(curLevel >= 4 && curLevel <= 6) { if(board[r+1][c+1] !== target[r][2-c]) match = false; }
+                        else if(curLevel === 7) { if(board[r+1][c+1] !== target[2-c][r]) match = false; }
+                        else { if(board[r+1][c+1] !== target[r][c]) match = false; }
+                    } else { if(board[r+1][c+1] !== target[r][c]) match = false; }
                 }
             }
             if(match) {
@@ -227,22 +229,47 @@
                 } else {
                     saveRank(curLevel, time);
                     if(curLevel<10) { alert(`LV ${curLevel} CLEAR!`); curLevel++; startGame(); }
-                    else { alert("🎉 ALL STAGES CLEAR!"); quitGame(); }
+                    else { alert("🎉 ALL CLEAR!"); quitGame(); }
                 }
             }
         }
 
         function updateScore(v) { db.ref(`users/${currentUid}/score`).transaction(c => (c||0)+v); }
-        function saveRank(lv, t) { db.ref('rankings').push({nickname: userNickname, level: lv, time: t, timestamp: Date.now()}); }
+
+        // [핵심 수정] 닉네임 기반 덮어씌우기 저장 로직
+        function saveRank(lv, t) {
+            if(!userNickname) return;
+            const rankRef = db.ref('rankings/' + userNickname);
+            rankRef.once('value', snap => {
+                const old = snap.val();
+                // 이전 기록보다 더 높은 레벨이거나, 레벨은 같으나 시간이 더 단축된 경우에만 갱신
+                if(!old || lv > old.level || (lv === old.level && t < old.time)) {
+                    rankRef.set({
+                        nickname: userNickname,
+                        level: lv,
+                        time: t,
+                        timestamp: Date.now()
+                    });
+                }
+            });
+        }
+
         function loadRankings() {
             db.ref('rankings').on('value', snap => {
-                const d = []; snap.forEach(c => d.push(c.val()));
-                const sorted = [...d].sort((a,b)=> (b.level-a.level) || (a.time-b.time));
+                const dataObj = snap.val() || {};
+                const d = Object.values(dataObj);
+                const sorted = d.sort((a,b)=> (b.level-a.level) || (a.time-b.time));
+                
                 // TOP 10 하이라이트 표시
                 document.getElementById('topRankList').innerHTML = sorted.slice(0,10).map((v,i)=>`<tr style="${v.nickname===userNickname?'background:rgba(0,251,255,0.2); font-weight:bold;':''}"><td>${i+1}위 ${v.nickname}</td><td>LV${v.level}</td><td>${v.time}s</td></tr>`).join('');
-                document.getElementById('liveFeedList').innerHTML = [...d].sort((a,b)=> b.timestamp-a.timestamp).slice(0,5).map(v=>`<tr><td>${v.nickname}</td><td>LV${v.level}</td><td>${v.time}s</td></tr>`).join('');
-                const myBest = sorted.find(v => v.nickname === userNickname);
-                if(myBest) document.getElementById('myBestText').innerText = `최고 도달: LV ${myBest.level} (${myBest.time}초)`;
+                document.getElementById('liveFeedList').innerHTML = d.sort((a,b)=> b.timestamp-a.timestamp).slice(0,5).map(v=>`<tr><td>${v.nickname}</td><td>LV${v.level}</td><td>${v.time}s</td></tr>`).join('');
+                
+                // [마이페이지 업데이트] 내 최고 기록 표시
+                const myRecord = sorted.find(v => v.nickname === userNickname);
+                if(myRecord) {
+                    document.getElementById('myBestLv').innerText = "LV " + myRecord.level;
+                    document.getElementById('myBestTime').innerText = myRecord.time + "초";
+                }
             });
         }
 
@@ -264,8 +291,15 @@
             db.ref(`activeBattles/${id}/winner`).on('value', snap => { if(snap.val() && snap.val()!==currentUid) { alert("패배! (-3)"); updateScore(-3); quitGame(); } });
         }
         function adminSeed() {
-            const data = [{nickname: "금주띠", level: 10, time: 75, timestamp: 1}, {nickname: "킹여울", level: 10, time: 76, timestamp: 2}];
-            data.forEach(v => db.ref('rankings').push(v)); alert("기록 주입!");
+            const data = {
+                "금주띠": {nickname: "금주띠", level: 10, time: 75, timestamp: 1},
+                "킹여울": {nickname: "킹여울", level: 10, time: 76, timestamp: 2}
+            };
+            db.ref('rankings').update(data); alert("전설의 기록 주입!");
+        }
+
+        function showMyPage() {
+            showScreen('myPageScreen');
         }
     </script>
 </body>

@@ -3,43 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RUBIK'S RACE - PRO EDITION</title>
+    <title>RUBIK'S RACE - REVERSE EDITION</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
         :root { --bg: #000; --panel: #1a1a1d; --accent: #00fbff; --gold: #ffd700; --warn: #ff003c; --battle: #ff8800; --tile: 60px; --target-tile: 22px; --gap: 5px; }
-        body { background: var(--bg); color: white; font-family: sans-serif; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow-x: hidden; }
+        body { background: var(--bg); color: white; font-family: sans-serif; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
         .screen { display: none; width: 100%; max-width: 950px; padding: 15px; box-sizing: border-box; flex-direction: column; align-items: center; }
         .active { display: flex; }
         .card { background: var(--panel); padding: 25px; border-radius: 20px; width: 100%; max-width: 400px; border: 1px solid #333; text-align: center; }
-        .btn { width: 100%; padding: 15px; background: var(--accent); color: #000; font-weight: bold; border: none; border-radius: 12px; cursor: pointer; margin-top: 10px; transition: 0.2s; }
-        .btn:active { transform: scale(0.98); }
+        .btn { width: 100%; padding: 15px; background: var(--accent); color: #000; font-weight: bold; border: none; border-radius: 12px; cursor: pointer; margin-top: 10px; }
         .btn-battle { background: var(--battle); color: white; }
-        .btn-sub { background: #333; color: white; font-size: 0.8rem; padding: 10px; }
-        
-        /* 랭킹/게임 레이아웃 */
         .game-layout { display: flex; gap: 15px; width: 100%; justify-content: center; align-items: flex-start; flex-wrap: wrap; }
-        .rank-container { width: 260px; display: flex; flex-direction: column; gap: 15px; }
-        .rank-panel { background: var(--panel); padding: 15px; border-radius: 15px; border: 1px solid #333; }
+        .rank-container { width: 260px; display: flex; flex-direction: column; gap: 10px; }
+        .rank-panel { background: var(--panel); padding: 12px; border-radius: 15px; border: 1px solid #333; }
         .rank-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; text-align: center; }
         .rank-table td { padding: 6px 0; border-bottom: 1px solid #222; }
-
         .game-header { display: flex; justify-content: space-around; align-items: center; width: 100%; margin-bottom: 15px; background: #111; padding: 10px; border-radius: 15px; border: 1px solid #222; position: relative; }
-        .target-box { display: grid; grid-template-columns: repeat(3, var(--target-tile)); gap: 3px; background: #000; padding: 5px; border-radius: 5px; border: 1px solid var(--accent); transition: transform 0.3s; }
-        .target-tile { width: var(--target-tile); height: var(--target-tile); border-radius: 3px; }
+        .target-box { display: grid; grid-template-columns: repeat(3, var(--target-tile)); gap: 3px; background: #000; padding: 5px; border-radius: 5px; border: 1px solid var(--accent); }
+        .target-tile { width: var(--target-tile); height: var(--target-tile); border-radius: 2px; }
         .board-grid { display: grid; grid-template-columns: repeat(5, var(--tile)); grid-template-rows: repeat(5, var(--tile)); gap: var(--gap); background: #111; padding: 8px; border-radius: 12px; position: relative; }
         .tile { width: 100%; height: 100%; border-radius: 6px; cursor: pointer; }
         .center-guide { position: absolute; top: calc(var(--tile) + var(--gap) + 8px - 2px); left: calc(var(--tile) + var(--gap) + 8px - 2px); width: calc(var(--tile)*3 + var(--gap)*2 + 4px); height: calc(var(--tile)*3 + var(--gap)*2 + 4px); border: 2px solid var(--accent); border-radius: 6px; pointer-events: none; }
-
-        /* 색상 및 효과 */
         .red { background: #FF003C !important; } .blue { background: #007BFF !important; } .green { background: #00FF6A !important; }
         .yellow { background: #FFD700 !important; } .orange { background: #FF8800 !important; } .white { background: #FFFFFF !important; } .empty { background: #222 !important; }
-        .hidden-tile { background: #000 !important; border: 1px solid #333; }
         @keyframes blink { 0%, 66% { opacity: 1; } 67%, 100% { opacity: 0; } }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        @media (max-width: 850px) { :root { --tile: 55px; } }
+        @media (max-width: 850px) { :root { --tile: 52px; } .rank-container { display: none; } }
     </style>
 </head>
 <body>
@@ -47,9 +37,9 @@
     <div id="authScreen" class="screen active">
         <div class="card">
             <h1 style="color:var(--accent)">RUBIK'S RACE</h1>
-            <input type="text" id="nickInput" style="width:100%; padding:12px; margin-bottom:10px; border-radius:10px; border:1px solid #444; background:#000; color:white; box-sizing:border-box;" placeholder="닉네임">
-            <input type="email" id="email" style="width:100%; padding:12px; margin-bottom:10px; border-radius:10px; border:1px solid #444; background:#000; color:white; box-sizing:border-box;" placeholder="이메일">
-            <input type="password" id="password" style="width:100%; padding:12px; margin-bottom:10px; border-radius:10px; border:1px solid #444; background:#000; color:white; box-sizing:border-box;" placeholder="비밀번호">
+            <input type="text" id="nickInput" style="width:100%; padding:12px; margin-bottom:10px; background:#000; color:white; border:1px solid #444;" placeholder="닉네임">
+            <input type="email" id="email" style="width:100%; padding:12px; margin-bottom:10px; background:#000; color:white; border:1px solid #444;" placeholder="이메일">
+            <input type="password" id="password" style="width:100%; padding:12px; margin-bottom:10px; background:#000; color:white; border:1px solid #444;" placeholder="비밀번호">
             <button class="btn" onclick="handleAuth('login')">로그인</button>
             <button class="btn" onclick="handleAuth('signup')" style="background:#333; color:white;">회원가입</button>
         </div>
@@ -58,51 +48,44 @@
     <div id="lobbyScreen" class="screen">
         <div class="card">
             <h2 style="color:var(--accent)">LOBBY</h2>
-            <p><span id="displayNick" style="color:var(--accent); font-weight:bold;"></span>님 환영합니다!</p>
+            <p><span id="displayNick" style="color:var(--accent); font-weight:bold;"></span>님 환영!</p>
             <button class="btn" onclick="startSolo()">🏆 솔로 랭킹전 (10단계)</button>
-            <button class="btn btn-battle" onclick="findMatch()">⚔️ 실시간 레이스 (승점제)</button>
-            <div style="display:flex; gap:10px; margin-top:10px;">
-                <button class="btn btn-sub" style="flex:1" onclick="showMyPage()">👤 마이페이지</button>
-                <button class="btn btn-sub" style="flex:1" onclick="auth.signOut()">🚪 로그아웃</button>
-            </div>
+            <button class="btn btn-battle" onclick="findMatch()">⚔️ 실시간 레이스 (+5/-3)</button>
+            <button class="btn" style="background:#222; color:white;" onclick="showMyPage()">👤 마이페이지</button>
+            <button onclick="auth.signOut()" style="margin-top:10px; background:none; border:none; color:#555;">로그아웃</button>
+            <button onclick="adminSeed()" style="margin-top:20px; font-size:10px; opacity:0.1; background:none; border:none; color:white;">Admin Seed</button>
         </div>
     </div>
 
     <div id="myPageScreen" class="screen">
         <div class="card">
-            <h2 style="color:var(--accent)">MY PAGE</h2>
-            <div style="background:#111; padding:20px; border-radius:15px; border:1px solid #333; margin-bottom:15px;">
-                <p style="font-size:0.9rem; color:#888; margin:0;">현재 배틀 승점</p>
-                <h1 id="myScore" style="font-size:3rem; color:var(--battle); margin:10px 0;">0</h1>
-                <p id="myRankStatus" style="font-size:0.8rem; color:var(--gold);"></p>
+            <h2>MY STATUS</h2>
+            <div style="background:#111; padding:20px; border-radius:15px; border:1px solid #333;">
+                <p style="color:#888;">배틀 승점</p>
+                <h1 id="myScoreText" style="color:var(--battle); font-size:3rem;">0</h1>
+                <p id="myBestText" style="font-size:0.8rem; color:var(--gold);"></p>
             </div>
-            <button class="btn" onclick="showScreen('lobbyScreen')">로비로 돌아가기</button>
-        </div>
-    </div>
-
-    <div id="battleWaitScreen" class="screen">
-        <div class="card">
-            <h2 style="color:var(--battle)">MATCHING...</h2>
-            <div style="border: 4px solid #333; border-top: 4px solid var(--battle); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto;"></div>
-            <p>상대방을 찾는 중입니다...</p>
-            <button onclick="cancelMatch()" style="margin-top:15px; color:#888; border:none; background:none;">취소</button>
+            <button class="btn" onclick="showScreen('lobbyScreen')">로비로</button>
         </div>
     </div>
 
     <div id="gameScreen" class="screen">
         <div class="game-layout">
             <div class="rank-container">
-                <div class="rank-panel" style="border-color: var(--gold);"><div style="font-size:0.8rem; color:var(--gold); margin-bottom:5px;">👑 TOP RANKERS</div><table class="rank-table"><tbody id="topRankList"></tbody></table></div>
-                <div class="rank-panel"><div style="font-size:0.8rem; color:var(--accent); margin-bottom:5px;">⚡ LIVE FEED</div><table class="rank-table"><tbody id="liveFeedList"></tbody></table></div>
+                <div class="rank-panel" style="border-color:var(--gold);"><div style="color:var(--gold); font-size:0.8rem;">👑 TOP 10</div><table class="rank-table"><tbody id="topRankList"></tbody></table></div>
+                <div class="rank-panel"><div style="color:var(--accent); font-size:0.8rem;">⚡ LIVE</div><table class="rank-table"><tbody id="liveFeedList"></tbody></table></div>
             </div>
             <div class="game-main">
                 <div class="game-header">
-                    <div style="text-align:center;"><div id="targetBoard" class="target-box"></div></div>
-                    <div style="text-align:center;"><div id="levelTxt" style="font-size:0.8rem; color:#888;">LV 01</div><div id="timerTxt" style="font-size:1.8rem; font-weight:800;">00:00</div></div>
-                    <div id="gimmickMsg" style="position:absolute; bottom:-15px; font-size:0.6rem; color:var(--warn);"></div>
+                    <div id="targetBoard" class="target-box"></div>
+                    <div style="text-align:right;">
+                        <div id="lvText" style="font-size:0.7rem; color:var(--accent);">LV 01</div>
+                        <div id="timerText" style="font-size:1.5rem; font-weight:bold;">00:00</div>
+                    </div>
+                    <div id="gimmickMsg" style="position:absolute; bottom:-18px; color:var(--warn); font-size:0.7rem; font-weight:bold;"></div>
                 </div>
-                <div class="board-grid" id="mainBoard"><div class="center-guide"></div></div>
-                <button class="btn" id="startBtn" onclick="startGame()" style="margin-top:15px;">START GAME</button>
+                <div id="mainBoard" class="board-grid"><div class="center-guide"></div></div>
+                <button id="startBtn" class="btn" onclick="startGame()" style="margin-top:15px;">START</button>
                 <button onclick="quitGame()" style="margin-top:10px; background:none; border:none; color:#555;">그만두기</button>
             </div>
         </div>
@@ -118,16 +101,16 @@
         };
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth(), db = firebase.database();
-        let userNickname = "", currentUid = "", battleId = null, isBattle = false;
+        let userNickname = "", currentUid = "", curLevel = 1, isBattle = false, battleId = null;
 
         auth.onAuthStateChanged(user => {
             if(user) {
                 currentUid = user.uid;
-                db.ref('users/' + user.uid).on('value', snap => {
-                    const userData = snap.val();
-                    userNickname = userData ? userData.nickname : user.email.split('@')[0];
+                db.ref(`users/${user.uid}`).on('value', snap => {
+                    const d = snap.val();
+                    userNickname = d ? d.nickname : "유저";
                     document.getElementById('displayNick').innerText = userNickname;
-                    document.getElementById('myScore').innerText = userData && userData.score ? userData.score : 0;
+                    document.getElementById('myScoreText').innerText = d ? (d.score || 0) : 0;
                     showScreen('lobbyScreen');
                     loadRankings();
                 });
@@ -136,133 +119,124 @@
 
         function handleAuth(mode) {
             const email = document.getElementById('email').value, pw = document.getElementById('password').value, nick = document.getElementById('nickInput').value;
-            if(mode === 'signup') {
-                if(!nick) return alert("닉네임 필수!");
-                auth.createUserWithEmailAndPassword(email, pw).then(res => db.ref('users/' + res.user.uid).set({ nickname: nick, score: 0 })).catch(e => alert(e.message));
-            } else { auth.signInWithEmailAndPassword(email, pw).catch(e => alert(e.message)); }
+            if(mode === 'signup') { if(!nick) return alert("닉네임 필수!"); auth.createUserWithEmailAndPassword(email, pw).then(res => db.ref(`users/${res.user.uid}`).set({nickname: nick, score: 0})); }
+            else auth.signInWithEmailAndPassword(email, pw).catch(e => alert(e.message));
         }
 
-        function showScreen(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-        }
+        function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); if(id==='gameScreen') resetEngine(); }
+        function showMyPage() { showScreen('myPageScreen'); }
 
-        function showMyPage() {
-            showScreen('myPageScreen');
-            // 추가적인 랭킹 분석 로직 등을 여기에 넣을 수 있습니다.
-        }
-
-        // --- 배틀 & 승점 로직 ---
-        function findMatch() {
-            showScreen('battleWaitScreen');
-            const waitRef = db.ref('waitingRoom');
-            waitRef.transaction(current => (current === null) ? currentUid : null, (err, comm, snap) => {
-                if (comm && snap.val() === currentUid) {
-                    waitRef.on('value', s => { if (s.val() === null) db.ref('activeBattles').orderByChild('p1').equalTo(currentUid).limitToLast(1).once('value', b => b.forEach(v => startBattle(v.key, v.val()))); });
-                } else if (comm) {
-                    const p1 = snap.val(); const newB = db.ref('activeBattles').push();
-                    const bData = { p1, p2: currentUid, winner: null };
-                    newB.set(bData).then(() => { waitRef.set(null); startBattle(newB.key, bData); });
-                }
-            });
-        }
-
-        function cancelMatch() { db.ref('waitingRoom').set(null); showScreen('lobbyScreen'); }
-
-        function startBattle(id, data) {
-            battleId = id; isBattle = true; showScreen('gameScreen');
-            document.getElementById('startBtn').style.display = "block";
-            db.ref(`activeBattles/${battleId}/winner`).on('value', snap => {
-                if (snap.val() && snap.val() !== currentUid) {
-                    alert("패배! 승점이 3점 차감됩니다.");
-                    updateUserScore(-3); quitGame();
-                }
-            });
-        }
-
-        function updateUserScore(delta) {
-            db.ref(`users/${currentUid}/score`).transaction(curr => (curr || 0) + delta);
-        }
-
-        // --- 게임 엔진 ---
         const COLORS = ['red', 'blue', 'green', 'yellow', 'orange', 'white'];
-        let board = [], target = [], empty = {r:4, c:4}, isRunning = false, curLevel = 1, startTime = 0, timerInterval;
+        let board = [], target = [], empty = {r:4, c:4}, isRunning = false, startTime = 0, timerInterval;
 
-        function startSolo() { isBattle = false; battleId = null; curLevel = 1; showScreen('gameScreen'); }
+        function startSolo() { isBattle = false; curLevel = 1; showScreen('gameScreen'); }
+        function quitGame() { isRunning = false; clearInterval(timerInterval); if(battleId) db.ref(`activeBattles/${battleId}`).remove(); showScreen('lobbyScreen'); }
+        function resetEngine() { document.getElementById('startBtn').style.display="block"; document.getElementById('timerText').innerText="00:00"; document.getElementById('mainBoard').innerHTML='<div class="center-guide"></div>'; document.getElementById('targetBoard').innerHTML=''; document.getElementById('gimmickMsg').innerText=""; }
 
         function startGame() {
             isRunning = true; startTime = Date.now();
-            document.getElementById('startBtn').style.display = "none";
-            updateLevelUI();
+            document.getElementById('startBtn').style.display="none";
             if(timerInterval) clearInterval(timerInterval);
             timerInterval = setInterval(() => {
-                const diff = Math.floor((Date.now() - startTime) / 1000);
-                document.getElementById('timerTxt').innerText = `${Math.floor(diff/60)}:${(diff%60).toString().padStart(2,'0')}`;
+                const s = Math.floor((Date.now()-startTime)/1000);
+                document.getElementById('timerText').innerText = `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;
             }, 1000);
-            initBoard(); render();
+            initLevel();
         }
 
-        function updateLevelUI() {
-            const msg = document.getElementById('gimmickMsg'); const box = document.getElementById('targetBoard');
-            document.getElementById('levelTxt').innerText = isBattle ? "BATTLE" : `LV ${curLevel.toString().padStart(2,'0')}`;
-            box.style.transform = "none"; box.style.animation = "none"; msg.innerText = "";
-            if (!isBattle) {
-                if (curLevel >= 4 && curLevel <= 5) { box.style.transform = "scaleX(-1)"; msg.innerText = "⚠ MIRROR"; }
-                else if (curLevel >= 6 && curLevel <= 7) { box.style.transform = "rotate(90deg)"; msg.innerText = "⚠ 90° ROTATED"; }
-                else if (curLevel === 8) { box.style.animation = "blink 3s infinite"; msg.innerText = "⚠ BLINKING"; }
-                else if (curLevel === 9) { msg.innerText = "⚠ BLIND CENTER"; }
-                else if (curLevel === 10) { box.style.transform = "scaleX(-1) rotate(180deg)"; msg.innerText = "⚠ FINAL CHAOS"; }
-            }
-        }
-
-        function initBoard() {
-            let p = []; COLORS.forEach(c => { for(let i=0; i<4; i++) p.push(c); }); p.push(COLORS[0]); p.sort(() => Math.random() - 0.5);
-            board = Array.from({length:5}, (_,r) => Array.from({length:5}, (_,c) => (r==4 && c==4)?'empty':p.pop()));
+        function initLevel() {
+            let p = []; COLORS.forEach(c => { for(let i=0; i<4; i++) p.push(c); }); p.push(COLORS[0]); p.sort(()=>Math.random()-0.5);
+            board = Array.from({length:5}, (_,r)=> Array.from({length:5}, (_,c)=> (r==4 && c==4)?'empty':p.pop()));
             empty = {r:4, c:4};
-            let tp = []; COLORS.forEach(c => { for(let i=0; i<4; i++) tp.push(c); }); tp.sort(() => Math.random() - 0.5);
-            target = Array.from({length:3}, () => Array.from({length:3}, () => tp.pop()));
+            let tp = []; COLORS.forEach(c => { for(let i=0; i<4; i++) tp.push(c); }); tp.sort(()=>Math.random()-0.5);
+            target = Array.from({length:3}, ()=> Array.from({length:3}, ()=> tp.pop()));
+            render();
         }
 
         function render() {
-            const mb = document.getElementById('mainBoard'); mb.innerHTML = '<div class="center-guide"></div>';
-            board.forEach((row, r) => row.forEach((col, c) => {
-                const d = document.createElement('div'); d.className = `tile ${col}`; d.onclick = () => move(r,c); mb.appendChild(d);
+            const mb = document.getElementById('mainBoard'); mb.innerHTML='<div class="center-guide"></div>';
+            board.forEach((row,r)=> row.forEach((col,c)=> {
+                const d = document.createElement('div'); d.className=`tile ${col}`; d.onclick=()=>move(r,c); mb.appendChild(d);
             }));
-            const tb = document.getElementById('targetBoard'); tb.innerHTML = '';
-            target.forEach((row, r) => row.forEach((col, c) => {
-                const d = document.createElement('div'); d.className = `target-tile ${(curLevel===9 && !isBattle && r===1 && c===1) ? 'hidden-tile' : col}`; tb.appendChild(d);
+            const tb = document.getElementById('targetBoard'); tb.innerHTML='';
+            target.forEach((row,r)=> row.forEach((col,c)=> {
+                const d = document.createElement('div');
+                if(!isBattle && curLevel===9 && r===1 && c===1) d.className=`target-tile empty`;
+                else d.className=`target-tile ${col}`;
+                tb.appendChild(d);
             }));
+            const msg = document.getElementById('gimmickMsg');
+            document.getElementById('lvText').innerText = isBattle ? "BATTLE" : `LV ${curLevel.toString().padStart(2,'0')}`;
+            tb.style.animation = (!isBattle && curLevel===8) ? "blink 2s infinite" : "none";
+            if(!isBattle && curLevel >= 4 && curLevel <= 6) msg.innerText = "⚠ REVERSE CLEAR MODE (반대로 맞추세요!)";
+            else msg.innerText = "";
         }
 
-        function move(r, c) { if(!isRunning || Math.abs(r-empty.r) + Math.abs(c-empty.c) !== 1) return; board[empty.r][empty.c] = board[r][c]; board[r][c] = 'empty'; empty = {r,c}; render(); checkWin(); }
+        function move(r,c) {
+            if(!isRunning || Math.abs(r-empty.r)+Math.abs(c-empty.c)!==1) return;
+            board[empty.r][empty.c] = board[r][c]; board[r][c] = 'empty'; empty = {r,c}; render(); checkWin();
+        }
 
         function checkWin() {
-            for(let r=0; r<3; r++) for(let c=0; c<3; c++) if(board[r+1][c+1] !== target[r][c]) return;
-            isRunning = false; clearInterval(timerInterval);
-            const elapsed = Math.floor((Date.now() - startTime) / 1000);
-            if (isBattle) {
-                db.ref(`activeBattles/${battleId}/winner`).set(currentUid).then(() => { alert("승리! 승점 5점을 획득합니다."); updateUserScore(5); saveRecord(10, elapsed); quitGame(); });
-            } else {
-                saveRecord(curLevel, elapsed);
-                if(curLevel < 10) { alert(`LV ${curLevel} CLEAR!`); curLevel++; startGame(); }
-                else { alert(`FINAL CLEAR!`); quitGame(); }
+            if(empty.r >= 1 && empty.r <= 3 && empty.c >= 1 && empty.c <= 3) return; // 중앙 빈칸 금지
+            
+            let match = true;
+            for(let r=0; r<3; r++) {
+                for(let c=0; c<3; c++) {
+                    // [핵심] 4~6단계 리버스 클리어 로직
+                    if(!isBattle && curLevel >= 4 && curLevel <= 6) {
+                        if(board[r+1][c+1] !== target[r][2-c]) match = false; // 좌우 반전 비교
+                    } else {
+                        if(board[r+1][c+1] !== target[r][c]) match = false; // 기본 비교
+                    }
+                }
+            }
+
+            if(match) {
+                isRunning = false; clearInterval(timerInterval);
+                const time = Math.floor((Date.now()-startTime)/1000);
+                if(isBattle) {
+                    db.ref(`activeBattles/${battleId}/winner`).set(currentUid).then(()=> { alert("승리! (+5)"); updateScore(5); saveRank(10, time); quitGame(); });
+                } else {
+                    saveRank(curLevel, time);
+                    if(curLevel<10) { alert(`LV ${curLevel} CLEAR!`); curLevel++; startGame(); }
+                    else { alert("🎉 ALL CLEAR!"); quitGame(); }
+                }
             }
         }
 
-        function saveRecord(lv, time) { db.ref('rankings').push({ nickname: userNickname, level: lv, time: time, timestamp: Date.now() }); }
-
+        function updateScore(v) { db.ref(`users/${currentUid}/score`).transaction(c => (c||0)+v); }
+        function saveRank(lv, t) { db.ref('rankings').push({nickname: userNickname, level: lv, time: t, timestamp: Date.now()}); }
         function loadRankings() {
             db.ref('rankings').on('value', snap => {
-                const data = []; snap.forEach(c => data.push(c.val()));
-                const top = [...data].sort((a,b) => (b.level - a.level) || (a.time - b.time)).slice(0, 5);
-                document.getElementById('topRankList').innerHTML = top.map((d,i) => `<tr><td>${i+1}위 ${d.nickname}</td><td>LV${d.level}</td><td>${d.time}s</td></tr>`).join('');
-                const live = [...data].sort((a,b) => b.timestamp - a.timestamp).slice(0, 5);
-                document.getElementById('liveFeedList').innerHTML = live.map(d => `<tr><td>${d.nickname}</td><td>LV${d.level}</td><td>${d.time}s</td></tr>`).join('');
+                const d = []; snap.forEach(c => d.push(c.val()));
+                const sorted = [...d].sort((a,b)=> (b.level-a.level) || (a.time-b.time));
+                document.getElementById('topRankList').innerHTML = sorted.slice(0,10).map((v,i)=>`<tr style="${v.nickname===userNickname?'background:rgba(0,251,255,0.2)':''}"><td>${i+1}위 ${v.nickname}</td><td>LV${v.level}</td><td>${v.time}s</td></tr>`).join('');
+                document.getElementById('liveFeedList').innerHTML = [...d].sort((a,b)=> b.timestamp-a.timestamp).slice(0,5).map(v=>`<tr><td>${v.nickname}</td><td>LV${v.level}</td><td>${v.time}s</td></tr>`).join('');
+                const myBest = sorted.find(v => v.nickname === userNickname);
+                if(myBest) document.getElementById('myBestText').innerText = `내 최고: LV ${myBest.level} (${myBest.time}초)`;
             });
         }
 
-        function quitGame() { isRunning = false; clearInterval(timerInterval); if(battleId) { db.ref(`activeBattles/${battleId}`).remove(); battleId = null; } showScreen('lobbyScreen'); }
-        function resetGame() { document.getElementById('startBtn').style.display = "block"; document.getElementById('timerTxt').innerText = "00:00"; }
+        function findMatch() {
+            showScreen('battleWaitScreen');
+            db.ref('waiting').transaction(c => c?null:currentUid, (err, comm, snap)=> {
+                if(comm && snap.val()===currentUid) {
+                    db.ref('waiting').on('value', s => { if(!s.val()) db.ref('activeBattles').orderByChild('p1').equalTo(currentUid).limitToLast(1).once('value', b => b.forEach(v => startBattle(v.key))); });
+                } else if(comm) {
+                    const p1 = snap.val(); const b = db.ref('activeBattles').push();
+                    b.set({p1, p2: currentUid, winner: null}).then(()=> { db.ref('waiting').set(null); startBattle(b.key); });
+                }
+            });
+        }
+        function startBattle(id) {
+            battleId = id; isBattle = true; showScreen('gameScreen');
+            db.ref(`activeBattles/${id}/winner`).on('value', snap => { if(snap.val() && snap.val()!==currentUid) { alert("패배! (-3)"); updateScore(-3); quitGame(); } });
+        }
+        function adminSeed() {
+            const data = [{nickname: "금주띠", level: 10, time: 75, timestamp: 1}, {nickname: "킹여울", level: 10, time: 76, timestamp: 2}];
+            data.forEach(v => db.ref('rankings').push(v)); alert("기록 주입 완료!");
+        }
     </script>
 </body>
 </html>

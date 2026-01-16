@@ -4,243 +4,175 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="color-scheme" content="light only">
-    <title>RUBIK'S RACE - TOTAL ONLINE</title>
+    <title>RUBIK'S RACE - RUBIGS ONLINE</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
     <style>
-        :root {
-            --bg: #000000;
-            --panel: #1a1a1d;
-            --accent: #00fbff;
-            --tile-size: 75px;
-            --gap: 8px;
-        }
-
-        body { background: var(--bg); color: white; font-family: sans-serif; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        
-        /* 화면 전환 스타일 */
-        .screen { display: none; width: 100%; max-width: 1100px; padding: 20px; box-sizing: border-box; flex-direction: column; align-items: center; }
+        :root { --bg: #000; --panel: #1a1a1d; --accent: #00fbff; --tile: 70px; --gap: 8px; }
+        body { background: var(--bg); color: white; font-family: sans-serif; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow-x: hidden; }
+        .screen { display: none; width: 100%; max-width: 1000px; padding: 20px; box-sizing: border-box; flex-direction: column; align-items: center; }
         .active { display: flex; }
-        .game-layout { display: flex; gap: 30px; justify-content: center; align-items: flex-start; width: 100%; }
-
-        /* 공통 카드 및 버튼 */
-        .card { background: var(--panel); padding: 30px; border-radius: 20px; width: 100%; max-width: 400px; border: 1px solid #333; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .card { background: var(--panel); padding: 30px; border-radius: 20px; width: 100%; max-width: 380px; border: 1px solid #333; text-align: center; }
         input { width: 100%; padding: 15px; margin-bottom: 10px; border-radius: 10px; border: 1px solid #444; background: #000; color: white; box-sizing: border-box; }
-        .btn { width: 100%; padding: 15px; background: var(--accent); color: #000; font-weight: bold; border: none; border-radius: 10px; cursor: pointer; margin-top: 10px; transition: 0.2s; }
-        .btn:active { transform: scale(0.98); }
-
-        /* 랭킹 패널 */
-        .ranking-panel { width: 280px; background: var(--panel); border-radius: 20px; padding: 20px; border: 1px solid #333; }
+        .btn { width: 100%; padding: 15px; background: var(--accent); color: #000; font-weight: bold; border: none; border-radius: 12px; cursor: pointer; margin-top: 10px; }
+        .rank-panel { width: 260px; background: var(--panel); padding: 20px; border-radius: 20px; border: 1px solid #333; }
         .rank-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #222; font-size: 0.9rem; }
-        .rank-name { flex: 1; text-align: left; margin-left: 10px; overflow: hidden; text-overflow: ellipsis; }
-
-        /* 게임 보드 */
-        .board-area { position: relative; background: #111; padding: 15px; border-radius: 12px; }
-        .board-grid { display: grid; grid-template-columns: repeat(5, var(--tile-size)); grid-template-rows: repeat(5, var(--tile-size)); gap: var(--gap); }
+        .board-grid { display: grid; grid-template-columns: repeat(5, var(--tile)); grid-template-rows: repeat(5, var(--tile)); gap: var(--gap); background: #111; padding: 12px; border-radius: 12px; position: relative; }
         .tile { width: 100%; height: 100%; border-radius: 8px; cursor: pointer; }
-        .center-guide { position: absolute; top: calc(var(--tile-size) + var(--gap) + 15px - 4px); left: calc(var(--tile-size) + var(--gap) + 15px - 4px); width: calc(var(--tile-size) * 3 + var(--gap) * 2 + 8px); height: calc(var(--tile-size) * 3 + var(--gap) * 2 + 8px); border: 3px solid var(--accent); border-radius: 10px; pointer-events: none; box-shadow: 0 0 20px var(--accent); z-index: 10; }
-
-        /* 타일 색상 */
+        .center-guide { position: absolute; top: calc(var(--tile) + var(--gap) + 12px - 3px); left: calc(var(--tile) + var(--gap) + 12px - 3px); width: calc(var(--tile)*3 + var(--gap)*2 + 6px); height: calc(var(--tile)*3 + var(--gap)*2 + 6px); border: 3px solid var(--accent); border-radius: 8px; pointer-events: none; box-shadow: 0 0 15px var(--accent); z-index: 5; }
         .red { background: #FF003C !important; } .blue { background: #007BFF !important; } .green { background: #00FF6A !important; }
-        .yellow { background: #FFD700 !important; } .orange { background: #FF8800 !important; } .white { background: #FFFFFF !important; }
-        .empty { background: #222 !important; }
-
-        @media (max-width: 900px) {
-            .game-layout { flex-direction: column; align-items: center; }
-            :root { --tile-size: 60px; }
-            .ranking-panel { width: 100%; max-width: 400px; order: 2; }
-        }
+        .yellow { background: #FFD700 !important; } .orange { background: #FF8800 !important; } .white { background: #FFFFFF !important; } .empty { background: #222 !important; }
+        @media (max-width: 850px) { :root { --tile: clamp(55px, 16vw, 65px); } .active { flex-direction: column; align-items: center; } .rank-panel { width: 100%; margin-top: 20px; } }
     </style>
 </head>
 <body>
 
     <div id="authScreen" class="screen active">
         <div class="card">
-            <h2 style="color:var(--accent); letter-spacing: 2px;">RUBIK'S RACE</h2>
-            <p style="color:#888; font-size: 0.8rem; margin-bottom: 20px;">온라인 랭킹 챌린지</p>
-            <input type="email" id="email" placeholder="이메일">
+            <h1 style="color:var(--accent)">RUBIK'S RACE</h1>
+            <input type="text" id="nickInput" placeholder="사용할 닉네임 (가입 시)">
+            <input type="email" id="email" placeholder="이메일 주소">
             <input type="password" id="password" placeholder="비밀번호">
             <button class="btn" onclick="handleAuth('login')">로그인</button>
             <button class="btn" onclick="handleAuth('signup')" style="background:#333; color:white;">회원가입</button>
-            <p id="authMsg" style="color:#ff416c; font-size:0.8rem; margin-top: 15px;"></p>
+            <p id="authMsg" style="color:#ff416c; font-size:0.8rem; margin-top:15px;"></p>
         </div>
     </div>
 
     <div id="lobbyScreen" class="screen">
         <div class="card">
-            <h2 style="color:var(--accent)">LOBBY</h2>
-            <p>반갑습니다, <span id="uName" style="color:var(--accent); font-weight:bold;"></span>님!</p>
-            <div style="background:#222; padding:20px; border-radius:15px; margin: 20px 0; cursor:pointer; border:1px solid var(--accent);" onclick="showScreen('gameScreen')">
-                <h3 style="margin:0">🧩 루빅스 레이스 10단계</h3>
-                <p style="font-size:0.8rem; color:#888;">모든 단계를 클리어하고 랭킹에 도전하세요!</p>
-            </div>
-            <button onclick="auth.signOut()" style="background:none; border:none; color:#555; text-decoration:underline; cursor:pointer;">로그아웃</button>
+            <h2 style="color:var(--accent)">WELCOME</h2>
+            <p><span id="displayNick" style="font-weight:bold; color:var(--accent);"></span>님, 환영합니다!</p>
+            <button class="btn" onclick="showScreen('gameScreen')">🏁 챌린지 시작</button>
+            <button onclick="auth.signOut()" style="margin-top:20px; background:none; border:none; color:#555; text-decoration:underline;">로그아웃</button>
         </div>
     </div>
 
     <div id="gameScreen" class="screen">
-        <div class="game-layout">
-            <div class="ranking-panel">
-                <h3 style="color:var(--accent); text-align:center; margin-top:0;">🏆 TOP 10 RANKING</h3>
+        <div style="display:flex; gap:20px; width:100%; justify-content:center;" class="active">
+            <div class="rank-panel">
+                <h3 style="color:var(--accent); text-align:center; margin-top:0;">🏆 TOP 10</h3>
                 <div id="rankList"></div>
             </div>
-
             <div style="display:flex; flex-direction:column; align-items:center;">
-                <div style="text-align:center; margin-bottom:15px;">
-                    <div id="levelDisplay" style="color:var(--accent); font-weight:bold;">LEVEL 01</div>
-                    <div id="timerDisplay" style="font-size:2.5rem; font-weight:800;">05:00</div>
+                <div id="levelTxt" style="color:var(--accent); font-weight:bold;">LEVEL 01</div>
+                <div id="timerTxt" style="font-size:2rem; font-weight:800; margin-bottom:10px;">05:00</div>
+                <div class="board-grid" id="mainBoard"><div class="center-guide"></div></div>
+                <div style="margin-top:20px; display:flex; gap:10px;">
+                    <div id="targetBoard" style="display:grid; grid-template-columns:repeat(3,35px); gap:5px; background:#000; padding:8px; border-radius:10px;"></div>
+                    <button class="btn" id="startBtn" onclick="startGame()" style="width:120px; margin:0;">START</button>
                 </div>
-
-                <div class="board-area">
-                    <div class="center-guide"></div>
-                    <div id="mainBoard" class="board-grid"></div>
-                </div>
-
-                <div style="margin-top:20px; display:flex; gap:20px; align-items:center;">
-                    <div id="targetBoard" style="display:grid; grid-template-columns:repeat(3,40px); gap:5px; background:#000; padding:8px; border-radius:10px;"></div>
-                    <button class="btn" id="startBtn" onclick="startGame()" style="width:150px;">START</button>
-                </div>
-                <button onclick="showScreen('lobbyScreen')" style="margin-top:20px; background:none; border:none; color:#555; cursor:pointer;">로비로 돌아가기</button>
             </div>
         </div>
     </div>
 
     <script>
-        // --- 1. Firebase 설정 ---
+        // 사용자님이 주신 Firebase 설정값 적용
         const firebaseConfig = {
-            apiKey: "본인의_API_KEY",
-            authDomain: "본인의_PROJECT_ID.firebaseapp.com",
-            databaseURL: "https://본인의_PROJECT_ID.firebaseio.com",
-            projectId: "본인의_PROJECT_ID",
-            appId: "본인의_APP_ID"
+          apiKey: "AIzaSyBZZuQHXYsbbJA3L1L8-yFSfbw1w15p3NE",
+          authDomain: "rubigs.firebaseapp.com",
+          databaseURL: "https://rubigs-default-rtdb.firebaseio.com/", // 사용자 프로젝트 ID 기준 자동설정
+          projectId: "rubigs",
+          storageBucket: "rubigs.firebasestorage.app",
+          messagingSenderId: "175818594996",
+          appId: "1:175818594996:web:2ec5f57abe5f5a20d3d5e1",
+          measurementId: "G-DMYD96BWBN"
         };
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.database();
 
-        // --- 2. 인증 및 화면 제어 ---
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth(), db = firebase.database();
+        let userNickname = "";
+
         auth.onAuthStateChanged(user => {
-            if (user) {
-                document.getElementById('uName').innerText = user.email.split('@')[0];
-                showScreen('lobbyScreen');
-                loadRankings();
-            } else {
-                showScreen('authScreen');
-            }
+            if(user) {
+                db.ref('users/' + user.uid).once('value').then(snap => {
+                    userNickname = snap.val() ? snap.val().nickname : user.email.split('@')[0];
+                    document.getElementById('displayNick').innerText = userNickname;
+                    showScreen('lobbyScreen');
+                    loadRank();
+                });
+            } else { showScreen('authScreen'); }
         });
 
-        function handleAuth(type) {
-            const email = document.getElementById('email').value;
-            const pw = document.getElementById('password').value;
-            const msg = document.getElementById('authMsg');
-            if(type === 'login') {
-                auth.signInWithEmailAndPassword(email, pw).catch(e => msg.innerText = "로그인 실패: " + e.message);
-            } else {
-                auth.createUserWithEmailAndPassword(email, pw).then(() => alert("회원가입 완료! 로그인해 주세요.")).catch(e => msg.innerText = "가입 실패: " + e.message);
-            }
+        function handleAuth(mode) {
+            const email = document.getElementById('email').value, pw = document.getElementById('password').value;
+            const nick = document.getElementById('nickInput').value;
+            if(mode === 'signup') {
+                if(!nick) return alert("닉네임을 입력해주세요!");
+                auth.createUserWithEmailAndPassword(email, pw).then(res => {
+                    db.ref('users/' + res.user.uid).set({ nickname: nick });
+                    alert("가입 성공!");
+                }).catch(e => alert(e.message));
+            } else { auth.signInWithEmailAndPassword(email, pw).catch(e => alert(e.message)); }
         }
 
         function showScreen(id) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById(id).classList.add('active');
-            if(id === 'gameScreen') { resetGameState(); render(); }
         }
 
-        // --- 3. 랭킹 시스템 ---
-        function loadRankings() {
+        function loadRank() {
             db.ref('rankings').orderByChild('totalTime').limitToFirst(10).on('value', snap => {
-                const list = document.getElementById('rankList');
-                list.innerHTML = '';
+                const list = document.getElementById('rankList'); list.innerHTML = '';
                 let i = 1;
                 snap.forEach(child => {
                     const d = child.val();
-                    const m = Math.floor(d.totalTime / 60);
-                    const s = d.totalTime % 60;
-                    list.innerHTML += `<div class="rank-item">
-                        <span style="color:var(--accent); font-weight:bold;">${i++}</span>
-                        <span class="rank-name">${d.nickname}</span>
-                        <span style="color:#888;">${m}:${s.toString().padStart(2,'0')}</span>
-                    </div>`;
+                    list.innerHTML += `<div class="rank-item"><span>${i++}. ${d.nickname}</span><span>${Math.floor(d.totalTime/60)}:${(d.totalTime%60).toString().padStart(2,'0')}</span></div>`;
                 });
             });
         }
 
-        // --- 4. 게임 로직 (10단계 & 합산 시간) ---
         const COLORS = ['red', 'blue', 'green', 'yellow', 'orange', 'white'];
-        let board = [], target = [], emptyPos = {r:4, c:4}, isRunning = false;
-        let curLevel = 1, totalTime = 0, levelStartTime = 0;
-
-        function resetGameState() {
-            curLevel = 1; totalTime = 0; isRunning = false;
-            document.getElementById('levelDisplay').innerText = "LEVEL 01";
-            document.getElementById('timerDisplay').innerText = "05:00";
-        }
+        let board = [], target = [], empty = {r:4, c:4}, isRunning = false, curLevel = 1, totalSec = 0, startTime = 0;
 
         function startGame() {
-            isRunning = true;
-            levelStartTime = Date.now();
-            document.getElementById('levelDisplay').innerText = `LEVEL ${curLevel.toString().padStart(2,'0')}`;
-            document.getElementById('startBtn').innerText = "RESTART";
-            initBoard(); render();
+            isRunning = true; startTime = Date.now();
+            document.getElementById('levelTxt').innerText = `LEVEL ${curLevel.toString().padStart(2,'0')}`;
+            initData(); render();
         }
 
-        function initBoard() {
+        function initData() {
             let p = []; COLORS.forEach(c => { for(let i=0; i<4; i++) p.push(c); });
             p.push(COLORS[0]); p.sort(() => Math.random() - 0.5);
             board = Array.from({length:5}, (_,r) => Array.from({length:5}, (_,c) => (r==4 && c==4)?'empty':p.pop()));
-            emptyPos = {r:4, c:4};
+            empty = {r:4, c:4};
             let tp = []; COLORS.forEach(c => { for(let i=0; i<4; i++) tp.push(c); });
             tp.sort(() => Math.random() - 0.5);
             target = Array.from({length:3}, () => Array.from({length:3}, () => tp.pop()));
         }
 
         function render() {
-            const mb = document.getElementById('mainBoard');
-            const tb = document.getElementById('targetBoard');
-            mb.innerHTML = ''; tb.innerHTML = '';
+            const mb = document.getElementById('mainBoard'); mb.innerHTML = '<div class="center-guide"></div>';
             board.forEach((row, r) => row.forEach((col, c) => {
                 const d = document.createElement('div'); d.className = `tile ${col}`;
                 d.onclick = () => move(r,c); mb.appendChild(d);
             }));
+            const tb = document.getElementById('targetBoard'); tb.innerHTML = '';
             target.forEach(row => row.forEach(col => {
-                const d = document.createElement('div'); d.className = `tile ${col}`;
-                tb.appendChild(d);
+                const d = document.createElement('div'); d.className = `tile ${col}`; tb.appendChild(d);
             }));
         }
 
         function move(r, c) {
             if(!isRunning) return;
-            if(Math.abs(r-emptyPos.r) + Math.abs(c-emptyPos.c) === 1) {
-                board[emptyPos.r][emptyPos.c] = board[r][c]; board[r][c] = 'empty';
-                emptyPos = {r,c}; render(); checkWin();
+            if(Math.abs(r-empty.r) + Math.abs(c-empty.c) === 1) {
+                board[empty.r][empty.c] = board[r][c]; board[r][c] = 'empty';
+                empty = {r,c}; render(); checkWin();
             }
         }
 
         function checkWin() {
             for(let r=0; r<3; r++) for(let c=0; c<3; c++) if(board[r+1][c+1] !== target[r][c]) return;
-            // 클리어 시
-            const elapsed = Math.floor((Date.now() - levelStartTime) / 1000);
-            totalTime += elapsed;
-            if(curLevel < 10) {
-                alert(`LEVEL ${curLevel} 통과! (${elapsed}초)`);
-                curLevel++; startGame();
-            } else {
-                alert(`축하합니다! 10단계 최종 클리어!\n총 소요 시간: ${totalTime}초`);
-                saveRank(); resetGameState();
-            }
+            const elapsed = Math.floor((Date.now() - startTime) / 1000); totalSec += elapsed;
+            if(curLevel < 10) { alert(`CLEAR!`); curLevel++; startGame(); }
+            else { alert(`TOTAL: ${totalSec}s`); saveRank(); curLevel = 1; totalSec = 0; isRunning = false; }
         }
 
         function saveRank() {
-            const user = auth.currentUser;
-            if(!user) return;
-            db.ref('rankings').push({
-                nickname: user.email.split('@')[0],
-                totalTime: totalTime,
-                timestamp: Date.now()
-            });
+            db.ref('rankings').push({ nickname: userNickname, totalTime: totalSec, timestamp: Date.now() });
         }
     </script>
 </body>

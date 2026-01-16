@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RUBIK'S RACE - PRO FINAL</title>
+    <title>RUBIK'S RACE - ULTIMATE SYNC</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -80,7 +80,8 @@
         <div class="card">
             <h2 style="color:var(--battle)">MATCHING...</h2>
             <div style="border:4px solid #333; border-top:4px solid var(--battle); border-radius:50%; width:40px; height:40px; animation:spin 1s linear infinite; margin:20px auto;"></div>
-            <button onclick="cancelMatch()" style="color:#888; border:none; background:none; cursor:pointer;">매칭 취소</button>
+            <p id="matchInfo">상대방을 찾는 중입니다...</p>
+            <button onclick="cancelMatch()" style="color:#888; border:none; background:none; cursor:pointer;">취소</button>
         </div>
     </div>
 
@@ -203,10 +204,7 @@
             }
         }
 
-        function move(r,c) {
-            if(!isRunning || Math.abs(r-empty.r)+Math.abs(c-empty.c)!==1) return;
-            board[empty.r][empty.c] = board[r][c]; board[r][c] = 'empty'; empty = {r,c}; render(); checkWin();
-        }
+        function move(r,c) { if(!isRunning || Math.abs(r-empty.r)+Math.abs(c-empty.c)!==1) return; board[empty.r][empty.c] = board[r][c]; board[r][c] = 'empty'; empty = {r,c}; render(); checkWin(); }
 
         function checkWin() {
             if(empty.r >= 1 && empty.r <= 3 && empty.c >= 1 && empty.c <= 3) return;
@@ -215,7 +213,7 @@
                 for(let c=0; c<3; c++) {
                     if(!isBattle) {
                         if(curLevel >= 4 && curLevel <= 6) { if(board[r+1][c+1] !== target[r][2-c]) match = false; }
-                        else if(curLevel === 7) { if(board[r+1][c+1] !== target[2-c][r]) match = false; }
+                        else if(curLevel === 7) { if(board[c+1][3-r] !== target[r][c]) match = false; } // [7단 판정 수정]
                         else { if(board[r+1][c+1] !== target[r][c]) match = false; }
                     } else { if(board[r+1][c+1] !== target[r][c]) match = false; }
                 }
@@ -223,21 +221,15 @@
             if(match) {
                 isRunning = false; clearInterval(timerInterval);
                 const time = Math.floor((Date.now()-startTime)/1000);
-                if(isBattle) {
-                    db.ref(`activeBattles/${battleId}/winner`).set(currentUid).then(()=> { alert("레이스 승리! (+5)"); updateScore(5); saveRank(10, time); quitGame(); });
-                } else {
-                    saveRank(curLevel, time);
-                    if(curLevel<10) { alert(`LV ${curLevel} CLEAR!`); curLevel++; startGame(); }
-                    else { alert("🎉 ALL STAGES CLEAR!"); quitGame(); }
-                }
+                if(isBattle) { db.ref(`activeBattles/${battleId}/winner`).set(currentUid).then(()=> { alert("레이스 승리! (+5)"); updateScore(5); saveRank(10, time); quitGame(); }); }
+                else { saveRank(curLevel, time); if(curLevel<10) { alert(`LV ${curLevel} CLEAR!`); curLevel++; startGame(); } else { alert("🎉 ALL STAGES CLEAR!"); quitGame(); } }
             }
         }
 
         function updateScore(v) { db.ref(`users/${currentUid}/score`).transaction(c => (c||0)+v); }
-
         function saveRank(lv, t) {
             if(!userNickname) return;
-            const rankRef = db.ref('rankings/' + userNickname);
+            const rankRef = db.ref('rankings/' + userNickname); // [닉네임 중복 덮어씌우기 핵심]
             rankRef.once('value', snap => {
                 const old = snap.val();
                 if(!old || lv > old.level || (lv === old.level && t < old.time)) {
@@ -254,22 +246,42 @@
                 document.getElementById('topRankList').innerHTML = sorted.slice(0,10).map((v,i)=>`<tr style="${v.nickname===userNickname?'background:rgba(0,251,255,0.2); font-weight:bold;':''}"><td>${i+1}위 ${v.nickname}</td><td>LV${v.level}</td><td>${v.time}s</td></tr>`).join('');
                 document.getElementById('liveFeedList').innerHTML = d.sort((a,b)=> b.timestamp-a.timestamp).slice(0,5).map(v=>`<tr><td>${v.nickname}</td><td>LV${v.level}</td><td>${v.time}s</td></tr>`).join('');
                 const myRec = sorted.find(v => v.nickname === userNickname);
-                if(myRec) { document.getElementById('myBestLv').innerText = "LV " + myRec.level; document.getElementById('myBestTime').innerText = myRec.time + "초"; }
+                if(myRec) { document.getElementById('myBestLv').innerText = "LV " + myRec.innerText; document.getElementById('myBestTime').innerText = myRec.time + "초"; }
             });
         }
 
+        // [실시간 매칭 동기화 수정본]
         function findMatch() {
             showScreen('battleWaitScreen');
+            document.getElementById('matchInfo').innerText = "상대방을 찾는 중...";
             const matchRef = db.ref('matchQueue');
-            matchRef.transaction(c => c?null:currentUid, (err, comm, snap)=> {
-                if(comm && snap.val()===currentUid) {
-                    matchRef.on('value', s => { if(!s.val()) db.ref('activeBattles').orderByChild('p1').equalTo(currentUid).limitToLast(1).once('value', b => b.forEach(v => startBattle(v.key))); });
-                } else if(comm) {
-                    const p1 = snap.val(); const b = db.ref('activeBattles').push();
-                    b.set({p1, p2: currentUid, winner: null, timestamp: Date.now()}).then(()=> { matchRef.set(null); startBattle(b.key); });
+            
+            // p1(대기자)용 리스너: 내가 대기열에 들어간 후 방이 생기는지 감시
+            const battleSearch = db.ref('activeBattles').orderByChild('p1').equalTo(currentUid).limitToLast(1);
+            const onBattleAdded = (snap) => {
+                const b = snap.val();
+                if(Date.now() - b.timestamp < 30000) { // 최근 30초 내 매칭만
+                    battleSearch.off('child_added', onBattleAdded);
+                    startBattle(snap.key);
+                }
+            };
+            battleSearch.on('child_added', onBattleAdded);
+
+            matchRef.transaction(c => c ? null : currentUid, (err, comm, snap) => {
+                if (comm && snap.val() !== currentUid && snap.val() !== null) {
+                    // 내가 p2(참가자): 게임방을 직접 생성하고 상대에게 신호를 보냄
+                    const p1 = snap.val();
+                    const newB = db.ref('activeBattles').push();
+                    const bId = newB.key;
+                    newB.set({p1, p2: currentUid, winner: null, timestamp: Date.now()}).then(() => {
+                        matchRef.set(null); 
+                        battleSearch.off('child_added', onBattleAdded);
+                        startBattle(bId);
+                    });
                 }
             });
         }
+
         function cancelMatch() { db.ref('matchQueue').set(null); showScreen('lobbyScreen'); }
         function startBattle(id) {
             battleId = id; isBattle = true; showScreen('gameScreen'); resetEngine();

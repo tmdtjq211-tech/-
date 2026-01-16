@@ -3,43 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RUBIK'S RACE - MODE SELECT</title>
+    <title>RUBIK'S RACE - ULTIMATE</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
-        :root { --bg: #000; --panel: #1a1a1d; --accent: #00fbff; --gold: #ffd700; --warn: #ff003c; --battle: #ff8800; --tile: 60px; --target-tile: 22px; --gap: 5px; }
-        body { background: var(--bg); color: white; font-family: sans-serif; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
-        .screen { display: none; width: 100%; max-width: 950px; padding: 15px; box-sizing: border-box; flex-direction: column; align-items: center; }
+        :root {
+            --bg: #000; --panel: #1a1a1d; --accent: #00fbff; 
+            --gold: #ffd700; --warn: #ff003c; --battle: #ff8800;
+            --tile: 60px; --target-tile: 22px; --gap: 5px;
+        }
+        body { 
+            background: var(--bg); color: white; font-family: 'Pretendard', sans-serif; 
+            margin: 0; display: flex; justify-content: center; align-items: center; 
+            min-height: 100vh; overflow: hidden; touch-action: manipulation;
+        }
+        .screen { 
+            display: none; width: 100%; max-width: 500px; padding: 15px; 
+            box-sizing: border-box; flex-direction: column; align-items: center; 
+        }
         .active { display: flex; }
-        .card { background: var(--panel); padding: 25px; border-radius: 20px; width: 100%; max-width: 400px; border: 1px solid #333; text-align: center; }
-        .btn { width: 100%; padding: 15px; background: var(--accent); color: #000; font-weight: bold; border: none; border-radius: 12px; cursor: pointer; margin-top: 10px; transition: 0.2s; }
-        .btn-mode { background: #222; color: #888; border: 1px solid #444; margin-bottom: 5px; font-size: 0.9rem; }
-        .btn-mode.selected { background: var(--battle); color: white; border-color: var(--battle); }
-        .game-layout { display: flex; gap: 15px; width: 100%; justify-content: center; align-items: flex-start; flex-wrap: wrap; }
-        .rank-panel { background: var(--panel); padding: 12px; border-radius: 15px; border: 1px solid #333; width: 260px; }
-        .rank-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; text-align: center; }
-        .rank-table td { padding: 6px 0; border-bottom: 1px solid #222; }
-        .game-header { display: flex; justify-content: space-around; align-items: center; width: 100%; margin-bottom: 15px; background: #111; padding: 10px; border-radius: 15px; border: 1px solid #222; position: relative; }
-        .target-box { display: grid; grid-template-columns: repeat(3, var(--target-tile)); gap: 3px; background: #000; padding: 5px; border-radius: 5px; border: 1px solid var(--accent); transition: transform 0.6s; }
+        
+        /* UI 카드 스타일 */
+        .card { 
+            background: var(--panel); padding: 25px; border-radius: 20px; 
+            width: 100%; border: 1px solid #333; text-align: center; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        
+        /* 버튼 스타일 */
+        .btn { 
+            width: 100%; padding: 15px; background: var(--accent); color: #000; 
+            font-weight: bold; border: none; border-radius: 12px; cursor: pointer; 
+            margin-top: 10px; font-size: 1rem; transition: 0.2s; 
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn-mode { 
+            background: #222; color: #888; border: 1px solid #444; 
+            margin-bottom: 5px; font-size: 0.9rem; 
+        }
+        .btn-mode.selected { 
+            background: var(--battle); color: white; border-color: var(--battle); 
+            box-shadow: 0 0 10px rgba(255,136,0,0.3);
+        }
+        .btn-battle { background: var(--battle); color: white; }
+        
+        /* 게임 레이아웃 */
+        .game-layout { 
+            display: flex; flex-direction: column; align-items: center; gap: 15px; width: 100%; 
+        }
+        .rank-panel { 
+            background: var(--panel); padding: 10px; border-radius: 12px; 
+            border: 1px solid #333; width: 100%; margin-bottom: 10px;
+        }
+        .rank-table { 
+            width: 100%; border-collapse: collapse; font-size: 0.8rem; text-align: center; 
+        }
+        .rank-table td { padding: 4px 0; border-bottom: 1px solid #222; color: #ccc; }
+        
+        /* 게임 보드 영역 */
+        .game-header { 
+            display: flex; justify-content: space-between; align-items: center; 
+            width: 100%; margin-bottom: 15px; background: #111; padding: 15px; 
+            border-radius: 15px; border: 1px solid #222; position: relative; 
+            box-sizing: border-box;
+        }
+        .target-box { 
+            display: grid; grid-template-columns: repeat(3, var(--target-tile)); gap: 3px; 
+            background: #000; padding: 5px; border-radius: 5px; border: 1px solid var(--accent); 
+            transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55); /* 회전 애니메이션 */
+        }
         .target-tile { width: var(--target-tile); height: var(--target-tile); border-radius: 2px; }
-        .board-grid { display: grid; grid-template-columns: repeat(5, var(--tile)); grid-template-rows: repeat(5, var(--tile)); gap: var(--gap); background: #111; padding: 8px; border-radius: 12px; position: relative; }
-        .tile { width: 100%; height: 100%; border-radius: 6px; cursor: pointer; }
-        .center-guide { position: absolute; top: calc(var(--tile) + var(--gap) + 8px - 2px); left: calc(var(--tile) + var(--gap) + 8px - 2px); width: calc(var(--tile)*3 + var(--gap)*2 + 4px); height: calc(var(--tile)*3 + var(--gap)*2 + 4px); border: 2px solid var(--accent); border-radius: 6px; pointer-events: none; }
-        .red { background: #FF003C !important; } .blue { background: #007BFF !important; } .green { background: #00FF6A !important; }
-        .yellow { background: #FFD700 !important; } .orange { background: #FF8800 !important; } .white { background: #FFFFFF !important; } .empty { background: #222 !important; }
+        
+        .board-grid { 
+            display: grid; grid-template-columns: repeat(5, var(--tile)); 
+            grid-template-rows: repeat(5, var(--tile)); gap: var(--gap); 
+            background: #111; padding: 10px; border-radius: 12px; position: relative; 
+            box-shadow: inset 0 0 20px #000;
+        }
+        .tile { 
+            width: 100%; height: 100%; border-radius: 6px; cursor: pointer; 
+            transition: transform 0.1s;
+        }
+        .center-guide { 
+            position: absolute; 
+            top: calc(var(--tile) + var(--gap) + 10px - 2px); 
+            left: calc(var(--tile) + var(--gap) + 10px - 2px); 
+            width: calc(var(--tile)*3 + var(--gap)*2 + 4px); 
+            height: calc(var(--tile)*3 + var(--gap)*2 + 4px); 
+            border: 3px solid var(--accent); border-radius: 8px; 
+            pointer-events: none; z-index: 10;
+            box-shadow: 0 0 15px var(--accent);
+        }
+        
+        /* 색상 클래스 */
+        .red { background: #FF003C; } .blue { background: #007BFF; } .green { background: #00FF6A; }
+        .yellow { background: #FFD700; } .orange { background: #FF8800; } .white { background: #FFFFFF; } 
+        .empty { background: #222; }
+
+        /* 애니메이션 */
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
-        @media (max-width: 850px) { :root { --tile: 50px; } .rank-panel { display: none; } }
+        
+        @media (max-width: 400px) { :root { --tile: 50px; --target-tile: 18px; } }
     </style>
 </head>
 <body>
 
     <div id="authScreen" class="screen active">
         <div class="card">
-            <h1 style="color:var(--accent)">RUBIK'S RACE</h1>
-            <input type="text" id="nickInput" style="width:100%; padding:12px; margin-bottom:10px; background:#000; color:white; border:1px solid #444; border-radius:10px;" placeholder="닉네임">
-            <input type="email" id="email" style="width:100%; padding:12px; margin-bottom:10px; background:#000; color:white; border:1px solid #444; border-radius:10px;" placeholder="이메일">
-            <input type="password" id="password" style="width:100%; padding:12px; margin-bottom:10px; background:#000; color:white; border:1px solid #444; border-radius:10px;" placeholder="비밀번호">
+            <h1 style="color:var(--accent); font-style:italic;">RUBIK'S RACE</h1>
+            <p style="color:#666; font-size:0.8rem; margin-bottom:20px;">ULTIMATE EDITION</p>
+            <input type="text" id="nickInput" style="width:100%; padding:15px; margin-bottom:10px; background:#111; color:white; border:1px solid #333; border-radius:10px; box-sizing:border-box;" placeholder="닉네임 (필수)">
+            <input type="email" id="email" style="width:100%; padding:15px; margin-bottom:10px; background:#111; color:white; border:1px solid #333; border-radius:10px; box-sizing:border-box;" placeholder="이메일">
+            <input type="password" id="password" style="width:100%; padding:15px; margin-bottom:20px; background:#111; color:white; border:1px solid #333; border-radius:10px; box-sizing:border-box;" placeholder="비밀번호">
             <button class="btn" onclick="handleAuth('login')">로그인</button>
             <button class="btn" onclick="handleAuth('signup')" style="background:#333; color:white;">회원가입</button>
         </div>
@@ -48,57 +125,152 @@
     <div id="lobbyScreen" class="screen">
         <div class="card">
             <h2 style="color:var(--accent)">LOBBY</h2>
-            <p><span id="displayNick" style="color:var(--accent); font-weight:bold;"></span>님 환영!</p>
-            <button id="soloBtn" class="btn" onclick="startSolo()">🏆 솔로 랭킹전 (이어서)</button>
-            <hr style="border:0; border-top:1px solid #333; margin:15px 0;">
-            <p style="font-size:0.8rem; color:#888;">실시간 레이스 모드 선택</p>
-            <button id="mode_NORMAL" class="btn btn-mode selected" onclick="selectBattleMode('NORMAL')">BASIC (기본)</button>
-            <button id="mode_REVERSE" class="btn btn-mode" onclick="selectBattleMode('REVERSE')">MIRROR (미러)</button>
+            <p style="margin-bottom:20px;">
+                <span id="displayNick" style="color:white; font-weight:bold; font-size:1.2rem;"></span>님<br>
+                <span style="color:#666; font-size:0.8rem;">환영합니다!</span>
+            </p>
+            
+            <button id="soloBtn" class="btn" onclick="startSolo()" style="background: linear-gradient(45deg, #00fbff, #007BFF);">
+                🏆 솔로 랭킹전 시작
+            </button>
+            
+            <hr style="border:0; border-top:1px solid #333; margin:20px 0;">
+            
+            <p style="font-size:0.8rem; color:#888; margin-bottom:10px; text-align:left;">⚔️ 실시간 배틀 모드 선택</p>
+            <button id="mode_NORMAL" class="btn btn-mode selected" onclick="selectBattleMode('NORMAL')">BASIC (기본전)</button>
+            <button id="mode_REVERSE" class="btn btn-mode" onclick="selectBattleMode('REVERSE')">MIRROR (좌우반전)</button>
             <button id="mode_BLINK" class="btn btn-mode" onclick="selectBattleMode('BLINK')">MEMORY (암기)</button>
-            <button class="btn" style="background:var(--battle); color:white;" onclick="findMatch()">⚔️ 레이스 매칭 시작</button>
-            <button class="btn" onclick="auth.signOut()" style="background:#222; color:white; margin-top:15px;">로그아웃</button>
+            
+            <button class="btn btn-battle" onclick="findMatch()">매칭 시작</button>
+            
+            <div style="margin-top:20px; display:flex; gap:10px;">
+                <button class="btn" onclick="auth.signOut()" style="background:#222; color:#666; flex:1;">로그아웃</button>
+            </div>
         </div>
     </div>
 
     <div id="battleWaitScreen" class="screen">
         <div class="card">
             <h2 style="color:var(--battle)">MATCHING...</h2>
-            <div style="border:4px solid #333; border-top:4px solid var(--battle); border-radius:50%; width:40px; height:40px; animation:spin 1s linear infinite; margin:20px auto;"></div>
-            <p id="matchInfo">상대방을 찾는 중입니다...</p>
-            <button class="btn" onclick="cancelMatch()" style="background:none; color:#888;">매칭 취소</button>
+            <div style="border:4px solid #333; border-top:4px solid var(--battle); border-radius:50%; width:50px; height:50px; animation:spin 1s linear infinite; margin:30px auto;"></div>
+            <p id="matchInfo" style="color:#ccc;">상대방을 찾는 중...</p>
+            <button class="btn" onclick="cancelMatch()" style="background:#333; color:#ccc; margin-top:20px;">취소</button>
         </div>
     </div>
 
     <div id="gameScreen" class="screen">
         <div class="game-layout">
             <div class="rank-panel">
-                <div style="color:var(--gold); font-size:0.8rem; margin-bottom:10px;">👑 TOP 10</div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                    <span style="color:var(--gold); font-size:0.8rem; font-weight:bold;">👑 TOP 10</span>
+                    <span style="color:#666; font-size:0.7rem;">실시간 갱신</span>
+                </div>
                 <table class="rank-table"><tbody id="topRankList"></tbody></table>
             </div>
-            <div class="game-main">
+
+            <div style="width:100%;">
                 <div class="game-header">
-                    <div id="targetBoard" class="target-box"></div>
-                    <div style="text-align:right;">
-                        <div id="lvText" style="font-size:0.7rem; color:var(--accent);">LV 01</div>
-                        <div id="timerText" style="font-size:1.5rem; font-weight:bold;">00:00</div>
+                    <div id="targetWrapper">
+                        <div id="targetBoard" class="target-box"></div>
                     </div>
-                    <div id="gimmickMsg" style="position:absolute; bottom:-18px; color:var(--warn); font-size:0.7rem; font-weight:bold; width:100%; text-align:center;"></div>
+                    
+                    <div style="text-align:right;">
+                        <div id="lvText" style="font-size:0.8rem; color:var(--accent); margin-bottom:5px;">LV 01</div>
+                        <div id="timerText" style="font-size:1.8rem; font-weight:bold; font-variant-numeric: tabular-nums;">00:00</div>
+                    </div>
+                    
+                    <div id="gimmickMsg" style="position:absolute; bottom:-25px; left:0; width:100%; text-align:center; color:var(--warn); font-size:0.8rem; font-weight:bold; text-shadow:0 0 5px black;"></div>
                 </div>
-                <div id="mainBoard" class="board-grid"><div class="center-guide"></div></div>
-                <button id="startBtn" class="btn" onclick="startGame()">START</button>
-                <button onclick="quitGame()" style="margin-top:10px; background:none; border:none; color:#555; cursor:pointer;">그만두기</button>
+
+                <div id="mainBoard" class="board-grid">
+                    <div class="center-guide"></div>
+                </div>
+
+                <button id="startBtn" class="btn" onclick="startGame()">GAME START</button>
+                <button onclick="quitGame()" style="background:none; border:none; color:#555; text-decoration:underline; margin-top:15px; cursor:pointer;">그만두기 (기록 저장)</button>
             </div>
         </div>
     </div>
 
     <script>
-        const firebaseConfig = { apiKey: "AIzaSyBZZuQHXYsbbJA3L1L8-yFSfbw1w15p3NE", authDomain: "rubigs.firebaseapp.com", databaseURL: "https://rubigs-default-rtdb.firebaseio.com/", projectId: "rubigs", appId: "1:175818594996:web:2ec5f57abe5f5a20d3d5e1" };
+        // 1. Firebase 설정 (감독님 계정 정보)
+        const firebaseConfig = {
+            apiKey: "AIzaSyBZZuQHXYsbbJA3L1L8-yFSfbw1w15p3NE",
+            authDomain: "rubigs.firebaseapp.com",
+            databaseURL: "https://rubigs-default-rtdb.firebaseio.com/",
+            projectId: "rubigs",
+            appId: "1:175818594996:web:2ec5f57abe5f5a20d3d5e1"
+        };
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth(), db = firebase.database();
-        
-        let userNickname = "", currentUid = "", curLevel = 1, isBattle = false, battleId = null;
+
+        // 2. 전역 변수
+        let userNickname = "", currentUid = "";
+        let curLevel = 1, isBattle = false, battleId = null;
         let selectedMode = "NORMAL", battleGimmick = "NORMAL";
-        let gimmickMap = [], startTime = 0, timerInterval, rotationCount = 0;
+        let rotationCount = 0, timeRotation = 0; // 3분 회전용
+        let board = [], target = [], empty = {r:4, c:4};
+        let isRunning = false, startTime = 0, timerInterval;
+        let gimmickMap = []; // 20단계 기믹 저장소
+
+        const COLORS = ['red', 'blue', 'green', 'yellow', 'orange', 'white'];
+
+        // 3. 인증 및 데이터 복구 로직 (핵심!)
+        auth.onAuthStateChanged(user => {
+            if(user) {
+                currentUid = user.uid;
+                db.ref(`users/${user.uid}`).on('value', snap => {
+                    const d = snap.val();
+                    userNickname = d ? d.nickname : user.email.split('@')[0];
+                    document.getElementById('displayNick').innerText = userNickname;
+                    
+                    // [데이터 복구] 로컬이 없어도 서버 기록이 더 높으면 서버 기록 따라감
+                    db.ref('rankings/' + userNickname).once('value', rSnap => {
+                        const rData = rSnap.val();
+                        const localSaved = localStorage.getItem(`saveLv_${currentUid}`);
+                        
+                        let serverLv = rData ? rData.level : 1;
+                        let localLv = localSaved ? parseInt(localSaved) : 1;
+                        
+                        // 서버 기록이 있는데 20단계 미만이면, 깬 다음 단계(level+1)부터 시작
+                        if (serverLv >= localLv && serverLv < 20) {
+                            curLevel = serverLv + 1; 
+                            // 단, 서버에 이미 깬 기록이 있으면 +1 단계가 맞음 (예: 9단계 깼으면 10단계 도전)
+                        } else {
+                            curLevel = localLv;
+                        }
+
+                        // 로컬 스토리지 동기화
+                        localStorage.setItem(`saveLv_${currentUid}`, curLevel);
+                        
+                        document.getElementById('soloBtn').innerText = `🏆 솔로 랭킹전 시작 (LV ${curLevel.toString().padStart(2,'0')})`;
+                        showScreen('lobbyScreen');
+                        loadRankings();
+                    });
+                });
+            } else { showScreen('authScreen'); }
+        });
+
+        function handleAuth(mode) {
+            const email = document.getElementById('email').value;
+            const pw = document.getElementById('password').value;
+            const nick = document.getElementById('nickInput').value;
+            if(mode === 'signup') {
+                if(!nick) return alert("닉네임을 꼭 입력해주세요!");
+                auth.createUserWithEmailAndPassword(email, pw)
+                    .then(res => db.ref(`users/${res.user.uid}`).set({nickname: nick, score: 0}))
+                    .catch(e => alert("회원가입 실패: " + e.message));
+            } else {
+                auth.signInWithEmailAndPassword(email, pw).catch(e => alert("로그인 실패: " + e.message));
+            }
+        }
+
+        // 4. 화면 전환 및 모드 선택
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            if(id === 'gameScreen') resetEngine();
+        }
 
         function selectBattleMode(m) {
             selectedMode = m;
@@ -106,177 +278,385 @@
             document.getElementById(`mode_${m}`).classList.add('selected');
         }
 
-        auth.onAuthStateChanged(user => {
-            if(user) {
-                currentUid = user.uid;
-                db.ref(`users/${user.uid}`).once('value', snap => {
-                    const d = snap.val();
-                    userNickname = d ? d.nickname : user.email.split('@')[0];
-                    document.getElementById('displayNick').innerText = userNickname;
-                    const saved = localStorage.getItem(`saveLv_${currentUid}`);
-                    curLevel = saved ? parseInt(saved) : 1;
-                    document.getElementById('soloBtn').innerText = `🏆 솔로 랭킹전 (LV ${curLevel.toString().padStart(2,'0')})`;
-                    showScreen('lobbyScreen');
-                    loadRankings();
-                });
-            } else { showScreen('authScreen'); }
-        });
-
-        function handleAuth(mode) {
-            const email = document.getElementById('email').value, pw = document.getElementById('password').value, nick = document.getElementById('nickInput').value;
-            if(mode === 'signup') { auth.createUserWithEmailAndPassword(email, pw).then(res => db.ref(`users/${res.user.uid}`).set({nickname: nick, score: 0})); }
-            else { auth.signInWithEmailAndPassword(email, pw).catch(e => alert(e.message)); }
-        }
-
-        function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); if(id==='gameScreen') resetEngine(); }
-
-        let board = [], target = [], empty = {r:4, c:4}, isRunning = false;
-        const COLORS = ['red', 'blue', 'green', 'yellow', 'orange', 'white'];
-
-        function resetEngine() { 
-            document.getElementById('startBtn').style.display="block"; 
-            document.getElementById('timerText').innerText="00:00";
-            rotationCount = 0;
-            document.getElementById('targetBoard').style.transform = `rotate(0deg)`;
+        // 5. 게임 엔진 (솔로/배틀 공용)
+        function generateSoloGimmicks() {
+            // 1~20단계 기믹 생성
+            let map = Array(5).fill('NORMAL'); // 1~5
+            const pool1 = ['REVERSE', 'V_FLIP', 'ROTATE_CW']; // 6~10
+            const pool2 = ['BLINK', 'BLIND', 'REVERSE', 'V_FLIP']; // 11~15
+            
+            for(let i=0; i<5; i++) map.push(pool1[Math.floor(Math.random()*pool1.length)]);
+            for(let i=0; i<5; i++) map.push(pool2[Math.floor(Math.random()*pool2.length)]);
+            for(let i=0; i<5; i++) map.push('HARD_RANDOM'); // 16~20
+            
+            return map;
         }
 
         function startSolo() {
             isBattle = false;
-            // 20단계 점진적 난이도 맵 생성
-            gimmickMap = Array(5).fill('NORMAL');
-            const pool = ['REVERSE', 'V_FLIP', 'ROTATE_CW', 'BLINK', 'BLIND'];
-            for(let i=5; i<20; i++) gimmickMap.push(pool[Math.floor(Math.random() * pool.length)]);
+            battleId = null;
+            gimmickMap = generateSoloGimmicks();
             showScreen('gameScreen');
         }
 
+        function resetEngine() {
+            document.getElementById('startBtn').style.display = "block";
+            document.getElementById('timerText').innerText = "00:00";
+            document.getElementById('mainBoard').innerHTML = '<div class="center-guide"></div>';
+            document.getElementById('targetBoard').innerHTML = '';
+            document.getElementById('targetBoard').style.transform = "rotate(0deg)";
+            document.getElementById('gimmickMsg').innerText = "";
+            timeRotation = 0;
+        }
+
         function startGame() {
-            isRunning = true; startTime = Date.now();
-            document.getElementById('startBtn').style.display="none";
-            timerInterval = setInterval(() => {
-                const elapsed = Math.floor((Date.now() - startTime) / 1000);
-                document.getElementById('timerText').innerText = `${Math.floor(elapsed/60)}:${(elapsed%60).toString().padStart(2,'0')}`;
-                if (elapsed > 0 && elapsed % 180 === 0 && rotationCount !== Math.floor(elapsed/180)) {
-                    rotationCount = Math.floor(elapsed/180);
-                    document.getElementById('targetBoard').style.transform = `rotate(${rotationCount * 90}deg)`;
-                }
-            }, 1000);
+            isRunning = true; 
+            startTime = Date.now();
+            document.getElementById('startBtn').style.display = "none";
+            
+            if(timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(gameLoop, 1000);
+            
             initLevel();
         }
 
-        function initLevel() {
-            let p = []; COLORS.forEach(c => { for(let i=0; i<4; i++) p.push(c); }); p.push(COLORS[0]); p.sort(()=>Math.random()-0.5);
-            board = Array.from({length:5}, (_,r)=> Array.from({length:5}, (_,c)=> (r==4 && c==4)?'empty':p.pop()));
-            empty = {r:4, c:4};
-            let tp = []; COLORS.forEach(c => { for(let i=0; i<4; i++) tp.push(c); }); tp.sort(()=>Math.random()-0.5);
-            target = Array.from({length:3}, ()=> Array.from({length:3}, ()=> tp.pop()));
-            render();
-        }
-
-        function render() {
-            const mb = document.getElementById('mainBoard'); mb.innerHTML='<div class="center-guide"></div>';
-            board.forEach((row,r)=> row.forEach((col,c)=> {
-                const d = document.createElement('div'); d.className=`tile ${col}`; d.onclick=()=>move(r,c); mb.appendChild(d);
-            }));
-            const tb = document.getElementById('targetBoard'); tb.innerHTML='';
-            const g = isBattle ? battleGimmick : gimmickMap[curLevel-1];
-            target.forEach((row,r)=> row.forEach((col,c)=> {
-                const d = document.createElement('div');
-                if(g === 'BLIND' && r === 1 && c === 1) d.className=`target-tile empty`;
-                else d.className=`target-tile ${col}`;
-                tb.appendChild(d);
-            }));
-            document.getElementById('lvText').innerText = isBattle ? `BATTLE (${g})` : `LV ${curLevel.toString().padStart(2,'0')}`;
-            document.getElementById('gimmickMsg').innerText = (g !== 'NORMAL') ? `⚠ 기믹 발동: ${g}` : "";
-            tb.style.animation = (g === 'BLINK') ? "blink 1.5s infinite" : "none";
-        }
-
-        function move(r,c) { if(!isRunning || Math.abs(r-empty.r)+Math.abs(c-empty.c)!==1) return; board[empty.r][empty.c] = board[r][c]; board[r][c] = 'empty'; empty = {r,c}; render(); checkWin(); }
-
-        function checkWin() {
-            if(empty.r >= 1 && empty.r <= 3 && empty.c >= 1 && empty.c <= 3) return;
-            let match = true;
-            const g = isBattle ? battleGimmick : gimmickMap[curLevel-1];
-            const getT = (r, c) => {
-                let tr = r, tc = c;
-                for(let i=0; i < (rotationCount % 4); i++) { let temp = tr; tr = tc; tc = 2 - temp; }
-                if(g === 'REVERSE') tc = 2 - tc;
-                if(g === 'V_FLIP') tr = 2 - tr;
-                if(g === 'ROTATE_CW') { let temp = tr; tr = tc; tc = 2 - temp; }
-                return target[tr][tc];
-            };
-            for(let r=0; r<3; r++) { for(let c=0; c<3; c++) { if(board[r+1][c+1] !== getT(r,c)) match = false; } }
-            if(match) {
-                isRunning = false; clearInterval(timerInterval);
-                const time = Math.floor((Date.now()-startTime)/1000);
-                if(isBattle) {
-                    db.ref(`activeBattles/${battleId}/winner`).set(currentUid).then(()=> { alert("레이스 승리! (+5)"); quitGame(); });
-                } else {
-                    saveRank(curLevel, time);
-                    if(curLevel < 20) { alert(`LV ${curLevel} CLEAR!`); curLevel++; localStorage.setItem(`saveLv_${currentUid}`, curLevel); startGame(); }
-                    else { alert("🎉 20단계 올클리어!"); localStorage.removeItem(`saveLv_${currentUid}`); quitGame(); }
+        function gameLoop() {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            document.getElementById('timerText').innerText = 
+                `${Math.floor(elapsed/60)}:${(elapsed%60).toString().padStart(2,'0')}`;
+            
+            // [3분 회전 로직] 180초마다 회전 카운트 증가
+            if (elapsed > 0 && elapsed % 180 === 0) {
+                const newRotation = Math.floor(elapsed / 180);
+                if (newRotation !== timeRotation) {
+                    timeRotation = newRotation;
+                    // 시각적 회전
+                    document.getElementById('targetBoard').style.transform = `rotate(${timeRotation * 90}deg)`;
+                    // 알림
+                    const msg = document.getElementById('gimmickMsg');
+                    const originalText = msg.innerText;
+                    msg.innerText = "⚡ 3분 경과! 정답판이 회전했습니다! ⚡";
+                    setTimeout(() => msg.innerText = originalText, 3000);
                 }
             }
         }
 
-        function quitGame() {
-            if (isRunning && !isBattle) saveRank(curLevel, Math.floor((Date.now()-startTime)/1000));
-            isRunning = false; clearInterval(timerInterval);
-            if(battleId) { db.ref(`activeBattles/${battleId}`).off(); battleId = null; }
-            showScreen('lobbyScreen');
+        function initLevel() {
+            // 보드 생성 (5x5)
+            let p = [];
+            COLORS.forEach(c => { for(let i=0; i<4; i++) p.push(c); });
+            p.push(COLORS[0]); // 타일 개수 맞추기 (25개 중 1개 empty)
+            p.sort(() => Math.random() - 0.5);
+            
+            board = [];
+            let idx = 0;
+            for(let r=0; r<5; r++) {
+                let row = [];
+                for(let c=0; c<5; c++) {
+                    if(r===4 && c===4) { row.push('empty'); empty = {r:4, c:4}; }
+                    else { row.push(p[idx++]); }
+                }
+                board.push(row);
+            }
+
+            // 타겟 생성 (3x3)
+            let tp = [];
+            COLORS.forEach(c => { for(let i=0; i<4; i++) tp.push(c); });
+            tp.sort(() => Math.random() - 0.5);
+            
+            target = [];
+            for(let r=0; r<3; r++) {
+                let row = [];
+                for(let c=0; c<3; c++) row.push(tp.pop());
+                target.push(row);
+            }
+            
+            render();
         }
 
-        // [실시간 매칭 모드별 동기화]
+        function render() {
+            const mb = document.getElementById('mainBoard');
+            mb.innerHTML = '<div class="center-guide"></div>'; // 가이드 유지
+            
+            // 보드 렌더링
+            board.forEach((row, r) => {
+                row.forEach((col, c) => {
+                    const d = document.createElement('div');
+                    d.className = `tile ${col}`;
+                    d.onclick = () => move(r, c);
+                    mb.appendChild(d);
+                });
+            });
+
+            // 타겟 렌더링
+            const tb = document.getElementById('targetBoard');
+            tb.innerHTML = '';
+            
+            // 현재 기믹 확인
+            const g = isBattle ? battleGimmick : gimmickMap[curLevel - 1];
+            
+            target.forEach((row, r) => {
+                row.forEach((col, c) => {
+                    const d = document.createElement('div');
+                    // BLIND 기믹: 가운데 가리기
+                    if (g === 'BLIND' && r === 1 && c === 1) d.className = 'target-tile empty';
+                    else d.className = `target-tile ${col}`;
+                    tb.appendChild(d);
+                });
+            });
+
+            // 텍스트 업데이트
+            document.getElementById('lvText').innerText = isBattle ? `BATTLE [${g}]` : `LV ${curLevel.toString().padStart(2,'0')}`;
+            
+            const msg = document.getElementById('gimmickMsg');
+            if(g === 'NORMAL') msg.innerText = "";
+            else msg.innerText = `⚠ 기믹 발동: ${g}`;
+            
+            // 애니메이션
+            tb.style.animation = (g === 'BLINK') ? "blink 1.5s infinite" : "none";
+        }
+
+        function move(r, c) {
+            if(!isRunning) return;
+            // 인접 체크
+            if(Math.abs(r - empty.r) + Math.abs(c - empty.c) !== 1) return;
+            
+            // 스왑
+            board[empty.r][empty.c] = board[r][c];
+            board[r][c] = 'empty';
+            empty = {r, c};
+            
+            render();
+            checkWin();
+        }
+
+        // 6. 승리 판정 (가장 중요한 부분)
+        function checkWin() {
+            // 빈칸이 중앙 3x3에 있으면 절대 승리 불가
+            if(empty.r >= 1 && empty.r <= 3 && empty.c >= 1 && empty.c <= 3) return;
+
+            let match = true;
+            const g = isBattle ? battleGimmick : gimmickMap[curLevel - 1];
+
+            // 좌표 변환 함수 (기믹 + 시간회전 적용)
+            const getTargetColor = (boardR, boardC) => {
+                // board 좌표(0~2) 기준
+                let tr = boardR, tc = boardC;
+
+                // 1. 시간 회전 적용 (90도 단위) - 시계 방향으로 돌아간 타겟을 역산
+                // 타겟이 돌아갔으므로, 보드는 그대로 두고 타겟 좌표를 돌려서 가져옴
+                for(let k=0; k < (timeRotation % 4); k++) {
+                    let temp = tr; tr = tc; tc = 2 - temp;
+                }
+
+                // 2. 레벨 기믹 적용
+                if (g === 'REVERSE') tc = 2 - tc; // 좌우반전
+                if (g === 'V_FLIP') tr = 2 - tr;  // 상하반전
+                if (g === 'ROTATE_CW') {          // 90도 회전
+                    let temp = tr; tr = tc; tc = 2 - temp;
+                }
+                // HARD_RANDOM은 섞임 (여기선 예시로 Mirror+Flip)
+                if (g === 'HARD_RANDOM') {
+                     tc = 2 - tc; tr = 2 - tr;
+                }
+
+                return target[tr][tc];
+            };
+
+            for(let r=0; r<3; r++) {
+                for(let c=0; c<3; c++) {
+                    // 보드의 중앙 3x3 (r+1, c+1)과 변환된 타겟 비교
+                    if(board[r+1][c+1] !== getTargetColor(r, c)) {
+                        match = false; break;
+                    }
+                }
+            }
+
+            if(match) {
+                isRunning = false; 
+                clearInterval(timerInterval);
+                const clearTime = Math.floor((Date.now() - startTime) / 1000);
+
+                if(isBattle) {
+                    // 배틀 승리
+                    db.ref(`activeBattles/${battleId}/winner`).set(currentUid)
+                        .then(() => {
+                            alert(`🎉 승리했습니다! (+5점)`);
+                            updateScore(5);
+                            quitGame();
+                        });
+                } else {
+                    // 솔로 승리
+                    saveRank(curLevel, clearTime);
+                    if(curLevel < 20) {
+                        alert(`LV ${curLevel} 클리어! 다음 단계로 넘어갑니다.`);
+                        curLevel++;
+                        localStorage.setItem(`saveLv_${currentUid}`, curLevel);
+                        startGame();
+                    } else {
+                        alert(`🎊 전설 달성! 20단계를 모두 클리어하셨습니다! 🎊`);
+                        // 올클리어 시 레벨 1로 초기화 (또는 유지 선택 가능)
+                        localStorage.removeItem(`saveLv_${currentUid}`);
+                        curLevel = 1;
+                        quitGame();
+                    }
+                }
+            }
+        }
+
+        // 7. 실시간 매칭 로직 (핸드쉐이크 + 모드별)
         function findMatch() {
             showScreen('battleWaitScreen');
-            document.getElementById('matchInfo').innerText = `${selectedMode} 모드 상대 찾는 중...`;
-            const modeQueue = db.ref(`matchQueue/${selectedMode}`);
+            document.getElementById('matchInfo').innerText = `${selectedMode} 모드 상대를 찾는 중...`;
+
+            const modeQueueRef = db.ref(`matchQueue/${selectedMode}`);
             
-            const battleWatcher = db.ref('activeBattles').orderByChild('p1').equalTo(currentUid).limitToLast(1);
-            const onBattle = (snap) => {
-                const b = snap.val();
-                if (b) {
-                    const bKey = Object.keys(snap.val())[0];
-                    battleWatcher.off('value', onBattle);
-                    battleGimmick = snap.val()[bKey].mode;
-                    startBattle(bKey);
+            // 1. 내가 방장이 될 경우를 대비해 리스너 등록
+            const myBattleWatcher = db.ref('activeBattles').orderByChild('p1').equalTo(currentUid).limitToLast(1);
+            
+            const onBattleStart = (snap) => {
+                const battles = snap.val();
+                if(battles) {
+                    const key = Object.keys(battles)[0];
+                    // 방금 생성된 방인지 확인 (30초 이내)
+                    if (Date.now() - battles[key].timestamp < 30000) {
+                        myBattleWatcher.off('value', onBattleStart);
+                        // 기믹 설정
+                        battleGimmick = battles[key].mode;
+                        startBattle(key);
+                    }
                 }
             };
-            battleWatcher.on('value', onBattle);
+            myBattleWatcher.on('value', onBattleStart);
 
-            modeQueue.transaction(c => c ? null : currentUid, (err, comm, snap) => {
-                if (comm && snap.val() !== currentUid && snap.val() !== null) {
-                    const p1 = snap.val();
-                    const newB = db.ref('activeBattles').push();
-                    const bId = newB.key;
-                    newB.set({ p1, p2: currentUid, winner: null, mode: selectedMode, timestamp: Date.now() }).then(() => {
-                        modeQueue.set(null);
-                        battleWatcher.off('value', onBattle);
+            // 2. 매칭 시도 트랜잭션
+            modeQueueRef.transaction(currentData => {
+                if (currentData === null) {
+                    return currentUid; // 대기열에 들어감
+                } else if (currentData === currentUid) {
+                    return currentUid; // 이미 있으면 유지
+                } else {
+                    return null; // 상대를 만났으니 대기열 비움 (내가 p2가 됨)
+                }
+            }, (error, committed, snapshot) => {
+                if (error) {
+                    alert("매칭 에러"); cancelMatch(); return;
+                }
+                
+                // 트랜잭션 결과 확인
+                const val = snapshot.val();
+                
+                if (committed && val === null) {
+                    // 내가 p2 (매칭 성사 시킴) -> 방 생성
+                    // transaction에서 null을 리턴했으므로 snapshot 전의 값이 상대방 ID임.
+                    // 하지만 Firebase transaction API 특성상 전 값을 알기 어려우므로
+                    // 여기서는 transaction 대신 직접 읽고 지우는 방식이 더 안정적일 수 있으나
+                    // 위 로직에서 상대 ID를 가져오려면 transaction update function 안에서 처리해야 함.
+                    // *간단한 해결책*: p1이 큐에 있고, 내가 접속했으면 p1 ID를 알아야 함.
+                    // 위 코드는 원자성을 위해 간소화됨. 아래 방식으로 재확인:
+                    
+                    // 다시 조회해서 상대방 ID 가져오기 (약간의 텀 존재 가능)
+                    // (실제 프로덕션에선 Cloud Functions 권장되나 여기선 클라이언트 로직 사용)
+                    // 위 트랜잭션 로직을 '내가 p2가 되는 경우' 값을 받아오도록 수정 불가하므로
+                    // [수정된 매칭 로직 사용]
+                }
+            });
+            
+            // *안정적인 P2 로직 (덮어쓰기 방지)*
+            // 위 트랜잭션은 큐 등록용이고, P2 진입은 아래처럼 별도로 처리합니다.
+            modeQueueRef.once('value', snap => {
+                const p1 = snap.val();
+                if (p1 && p1 !== currentUid) {
+                    // p1이 존재함 -> 방 만들고 시작
+                    modeQueueRef.set(null); // 큐 비우기
+                    const newBattle = db.ref('activeBattles').push();
+                    const bId = newBattle.key;
+                    
+                    newBattle.set({
+                        p1: p1,
+                        p2: currentUid,
+                        mode: selectedMode,
+                        winner: null,
+                        timestamp: Date.now()
+                    }).then(() => {
+                        myBattleWatcher.off('value', onBattleStart); // 나는 p1 리스너 필요 없음
                         battleGimmick = selectedMode;
                         startBattle(bId);
                     });
+                } 
+                // else: 내가 p1으로서 대기열에 등록됨 (트랜잭션에 의해)
+            });
+        }
+
+        function cancelMatch() {
+            db.ref(`matchQueue/${selectedMode}`).transaction(curr => {
+                return (curr === currentUid) ? null : curr;
+            });
+            showScreen('lobbyScreen');
+        }
+
+        function startBattle(id) {
+            battleId = id;
+            isBattle = true;
+            showScreen('gameScreen');
+            resetEngine(); // 여기서 회전도 0으로 초기화됨
+            
+            // 승패 감시
+            db.ref(`activeBattles/${id}/winner`).on('value', snap => {
+                const winner = snap.val();
+                if (winner && winner !== currentUid) {
+                    alert("패배했습니다... (-3점)");
+                    updateScore(-3);
+                    quitGame();
                 }
             });
         }
 
-        function cancelMatch() { db.ref(`matchQueue/${selectedMode}`).set(null); showScreen('lobbyScreen'); }
-        function startBattle(id) { battleId = id; isBattle = true; showScreen('gameScreen'); resetEngine(); 
-            db.ref(`activeBattles/${id}/winner`).on('value', snap => { if(snap.val() && snap.val()!==currentUid) { alert("패배! (-3)"); quitGame(); } });
+        // 8. 기타 유틸리티
+        function updateScore(score) {
+            db.ref(`users/${currentUid}/score`).transaction(current => (current || 0) + score);
+        }
+
+        function quitGame() {
+            if (isRunning && !isBattle) {
+                const t = Math.floor((Date.now() - startTime) / 1000);
+                saveRank(curLevel, t);
+            }
+            isRunning = false;
+            clearInterval(timerInterval);
+            if (battleId) {
+                db.ref(`activeBattles/${battleId}`).off(); // 리스너 해제
+                battleId = null;
+            }
+            showScreen('lobbyScreen');
         }
 
         function saveRank(lv, t) {
-            const rankRef = db.ref('rankings/' + userNickname);
-            rankRef.once('value', snap => {
-                const old = snap.val();
-                if(!old || lv > old.level || (lv === old.level && t < old.time)) {
-                    rankRef.set({ nickname: userNickname, level: lv, time: t, timestamp: Date.now() });
-                }
+            const ref = db.ref('rankings/' + userNickname);
+            ref.transaction(current => {
+                if (!current) return { nickname: userNickname, level: lv, time: t, timestamp: Date.now() };
+                if (lv > current.level) return { nickname: userNickname, level: lv, time: t, timestamp: Date.now() };
+                if (lv === current.level && t < current.time) return { nickname: userNickname, level: lv, time: t, timestamp: Date.now() };
+                return current; // 기록 경신 실패 시 유지
             });
         }
 
         function loadRankings() {
-            db.ref('rankings').on('value', snap => {
-                const d = Object.values(snap.val() || {}).sort((a,b)=> (b.level-a.level) || (a.time-b.time));
-                document.getElementById('topRankList').innerHTML = d.slice(0,10).map((v,i)=>`<tr><td>${i+1}위 ${v.nickname}</td><td>LV${v.level}</td><td>${v.time}s</td></tr>`).join('');
+            db.ref('rankings').orderByChild('level').limitToLast(10).on('value', snap => {
+                const list = [];
+                snap.forEach(c => list.push(c.val()));
+                // Firebase 정렬은 오름차순이므로 뒤집고, 레벨 같으면 시간순 정렬
+                list.sort((a, b) => (b.level - a.level) || (a.time - b.time));
+                
+                const html = list.map((v, i) => 
+                    `<tr style="${v.nickname === userNickname ? 'color:var(--accent); font-weight:bold;' : ''}">
+                        <td>${i+1}</td>
+                        <td>${v.nickname}</td>
+                        <td>LV ${v.level}</td>
+                        <td>${v.time}s</td>
+                    </tr>`
+                ).join('');
+                document.getElementById('topRankList').innerHTML = html;
             });
         }
     </script>

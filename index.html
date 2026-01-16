@@ -29,8 +29,8 @@
         .center-guide { position: absolute; top: calc(var(--tile) + var(--gap) + 8px - 2px); left: calc(var(--tile) + var(--gap) + 8px - 2px); width: calc(var(--tile)*3 + var(--gap)*2 + 4px); height: calc(var(--tile)*3 + var(--gap)*2 + 4px); border: 2px solid var(--accent); border-radius: 6px; pointer-events: none; }
         .red { background: #FF003C !important; } .blue { background: #007BFF !important; } .green { background: #00FF6A !important; }
         .yellow { background: #FFD700 !important; } .orange { background: #FF8800 !important; } .white { background: #FFFFFF !important; } .empty { background: #222 !important; }
-        @keyframes blink { 0%, 66% { opacity: 1; } 67%, 100% { opacity: 0; } }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes blink { 0%, 66% { opacity: 1; } 67%, 100% { opacity: 0; } }
         @media (max-width: 850px) { :root { --tile: 52px; } .rank-container { display: none; } }
     </style>
 </head>
@@ -72,7 +72,7 @@
                 <p style="color:#888; font-size:0.8rem; margin:5px 0;">나의 최고 시간</p>
                 <h2 id="myBestTime" style="color:#fff; margin:0;">0초</h2>
             </div>
-            <button class="btn" onclick="showScreen('lobbyScreen')">로비로</button>
+            <button class="btn" onclick="showScreen('lobbyScreen')">뒤로</button>
         </div>
     </div>
 
@@ -80,7 +80,7 @@
         <div class="card">
             <h2 style="color:var(--battle)">MATCHING...</h2>
             <div style="border:4px solid #333; border-top:4px solid var(--battle); border-radius:50%; width:40px; height:40px; animation:spin 1s linear infinite; margin:20px auto;"></div>
-            <button onclick="cancelMatch()" style="color:#888; border:none; background:none;">취소</button>
+            <button onclick="cancelMatch()" style="color:#888; border:none; background:none; cursor:pointer;">매칭 취소</button>
         </div>
     </div>
 
@@ -101,7 +101,7 @@
                 </div>
                 <div id="mainBoard" class="board-grid"><div class="center-guide"></div></div>
                 <button id="startBtn" class="btn" onclick="startGame()" style="margin-top:15px;">START</button>
-                <button onclick="quitGame()" style="margin-top:10px; background:none; border:none; color:#555;">그만두기</button>
+                <button onclick="quitGame()" style="margin-top:10px; background:none; border:none; color:#555; cursor:pointer;">그만두기</button>
             </div>
         </div>
     </div>
@@ -134,12 +134,15 @@
 
         function handleAuth(mode) {
             const email = document.getElementById('email').value, pw = document.getElementById('password').value, nick = document.getElementById('nickInput').value;
-            if(mode === 'signup') { if(!nick) return alert("닉네임 필수!"); auth.createUserWithEmailAndPassword(email, pw).then(res => db.ref(`users/${res.user.uid}`).set({nickname: nick, score: 0})); }
-            else auth.signInWithEmailAndPassword(email, pw).catch(e => alert(e.message));
+            if(mode === 'signup') {
+                if(!nick) return alert("닉네임 필수!");
+                auth.createUserWithEmailAndPassword(email, pw).then(res => db.ref(`users/${res.user.uid}`).set({nickname: nick, score: 0}));
+            } else { auth.signInWithEmailAndPassword(email, pw).catch(e => alert(e.message)); }
         }
 
         function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); if(id==='gameScreen') resetEngine(); }
-        
+        function showMyPage() { showScreen('myPageScreen'); }
+
         const COLORS = ['red', 'blue', 'green', 'yellow', 'orange', 'white'];
         let board = [], target = [], empty = {r:4, c:4}, isRunning = false, startTime = 0, timerInterval;
 
@@ -148,7 +151,7 @@
         function quitGame() {
             if (isRunning && !isBattle) {
                 const elapsed = Math.floor((Date.now() - startTime) / 1000);
-                if (elapsed > 1) { saveRank(curLevel, elapsed); } // [수정] 그만두기 시 즉시 저장
+                if (elapsed > 1) saveRank(curLevel, elapsed);
             }
             isRunning = false; clearInterval(timerInterval);
             if(battleId) { db.ref(`activeBattles/${battleId}`).off(); db.ref(`activeBattles/${battleId}`).remove(); battleId = null; }
@@ -212,7 +215,7 @@
                 for(let c=0; c<3; c++) {
                     if(!isBattle) {
                         if(curLevel >= 4 && curLevel <= 6) { if(board[r+1][c+1] !== target[r][2-c]) match = false; }
-                        else if(curLevel === 7) { if(board[r+1][c+1] !== target[2-c][r]) match = false; } // [수정] 90도 회전 공식
+                        else if(curLevel === 7) { if(board[r+1][c+1] !== target[2-c][r]) match = false; }
                         else { if(board[r+1][c+1] !== target[r][c]) match = false; }
                     } else { if(board[r+1][c+1] !== target[r][c]) match = false; }
                 }
@@ -221,18 +224,17 @@
                 isRunning = false; clearInterval(timerInterval);
                 const time = Math.floor((Date.now()-startTime)/1000);
                 if(isBattle) {
-                    db.ref(`activeBattles/${battleId}/winner`).set(currentUid).then(()=> { alert("승리! (+5)"); updateScore(5); saveRank(10, time); quitGame(); });
+                    db.ref(`activeBattles/${battleId}/winner`).set(currentUid).then(()=> { alert("레이스 승리! (+5)"); updateScore(5); saveRank(10, time); quitGame(); });
                 } else {
                     saveRank(curLevel, time);
                     if(curLevel<10) { alert(`LV ${curLevel} CLEAR!`); curLevel++; startGame(); }
-                    else { alert("🎉 ALL CLEAR!"); quitGame(); }
+                    else { alert("🎉 ALL STAGES CLEAR!"); quitGame(); }
                 }
             }
         }
 
         function updateScore(v) { db.ref(`users/${currentUid}/score`).transaction(c => (c||0)+v); }
 
-        // [핵심] 닉네임별 덮어씌우기 저장 방식
         function saveRank(lv, t) {
             if(!userNickname) return;
             const rankRef = db.ref('rankings/' + userNickname);
@@ -247,18 +249,12 @@
         function loadRankings() {
             db.ref('rankings').on('value', snap => {
                 const dataObj = snap.val() || {};
-                const d = Object.values(dataObj); // [핵심] 중복 없는 닉네임 리스트 추출
+                const d = Object.values(dataObj);
                 const sorted = d.sort((a,b)=> (b.level-a.level) || (a.time-b.time));
-                
                 document.getElementById('topRankList').innerHTML = sorted.slice(0,10).map((v,i)=>`<tr style="${v.nickname===userNickname?'background:rgba(0,251,255,0.2); font-weight:bold;':''}"><td>${i+1}위 ${v.nickname}</td><td>LV${v.level}</td><td>${v.time}s</td></tr>`).join('');
                 document.getElementById('liveFeedList').innerHTML = d.sort((a,b)=> b.timestamp-a.timestamp).slice(0,5).map(v=>`<tr><td>${v.nickname}</td><td>LV${v.level}</td><td>${v.time}s</td></tr>`).join('');
-                
-                // 마이페이지 데이터 동기화
                 const myRec = sorted.find(v => v.nickname === userNickname);
-                if(myRec) {
-                    document.getElementById('myBestLv').innerText = "LV " + myRec.level;
-                    document.getElementById('myBestTime').innerText = myRec.time + "초";
-                }
+                if(myRec) { document.getElementById('myBestLv').innerText = "LV " + myRec.level; document.getElementById('myBestTime').innerText = myRec.time + "초"; }
             });
         }
 
@@ -283,7 +279,6 @@
             const data = { "금주띠": {nickname: "금주띠", level: 10, time: 75, timestamp: 1}, "킹여울": {nickname: "킹여울", level: 10, time: 76, timestamp: 2} };
             db.ref('rankings').update(data); alert("전설 데이터 주입!");
         }
-        function showMyPage() { showScreen('myPageScreen'); }
     </script>
 </body>
 </html>

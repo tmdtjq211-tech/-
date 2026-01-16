@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RUBIK'S RACE - FINAL FIX</title>
+    <title>RUBIK'S RACE - INSTANT RANKING</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -14,17 +14,14 @@
         .active { display: flex; }
         .card { background: var(--panel); padding: 25px; border-radius: 20px; width: 100%; max-width: 400px; border: 1px solid #333; text-align: center; }
         .btn { width: 100%; padding: 15px; background: var(--accent); color: #000; font-weight: bold; border: none; border-radius: 12px; cursor: pointer; margin-top: 10px; transition: 0.2s; }
-        .btn:active { transform: scale(0.98); }
         .btn-battle { background: var(--battle); color: white; }
         
-        /* 랭킹 레이아웃 */
         .game-layout { display: flex; gap: 15px; width: 100%; justify-content: center; align-items: flex-start; flex-wrap: wrap; }
         .rank-container { width: 260px; display: flex; flex-direction: column; gap: 10px; }
         .rank-panel { background: var(--panel); padding: 12px; border-radius: 15px; border: 1px solid #333; }
         .rank-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; text-align: center; }
         .rank-table td { padding: 6px 0; border-bottom: 1px solid #222; }
 
-        /* 게임 헤더 */
         .game-header { display: flex; justify-content: space-around; align-items: center; width: 100%; margin-bottom: 15px; background: #111; padding: 10px; border-radius: 15px; border: 1px solid #222; position: relative; }
         .target-box { display: grid; grid-template-columns: repeat(3, var(--target-tile)); gap: 3px; background: #000; padding: 5px; border-radius: 5px; border: 1px solid var(--accent); }
         .target-tile { width: var(--target-tile); height: var(--target-tile); border-radius: 2px; }
@@ -32,14 +29,10 @@
         .tile { width: 100%; height: 100%; border-radius: 6px; cursor: pointer; }
         .center-guide { position: absolute; top: calc(var(--tile) + var(--gap) + 8px - 2px); left: calc(var(--tile) + var(--gap) + 8px - 2px); width: calc(var(--tile)*3 + var(--gap)*2 + 4px); height: calc(var(--tile)*3 + var(--gap)*2 + 4px); border: 2px solid var(--accent); border-radius: 6px; pointer-events: none; }
 
-        /* 상태 색상 */
         .red { background: #FF003C !important; } .blue { background: #007BFF !important; } .green { background: #00FF6A !important; }
         .yellow { background: #FFD700 !important; } .orange { background: #FF8800 !important; } .white { background: #FFFFFF !important; } .empty { background: #222 !important; }
-        
-        /* 애니메이션 */
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         @keyframes blink { 0%, 66% { opacity: 1; } 67%, 100% { opacity: 0; } }
-
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         @media (max-width: 850px) { :root { --tile: 52px; } .rank-container { display: none; } }
     </style>
 </head>
@@ -60,13 +53,13 @@
         <div class="card">
             <h2 style="color:var(--accent)">LOBBY</h2>
             <p><span id="displayNick" style="color:var(--accent); font-weight:bold;"></span>님 환영!</p>
-            <button class="btn" onclick="startSolo()">🏆 솔로 랭킹전 (10단계)</button>
-            <button class="btn btn-battle" onclick="findMatch()">⚔️ 실시간 레이스 (+5/-3)</button>
+            <button class="btn" onclick="startSolo()">🏆 솔로 랭킹전</button>
+            <button class="btn btn-battle" onclick="findMatch()">⚔️ 실시간 레이스</button>
             <div style="display:flex; gap:10px; margin-top:10px;">
-                <button class="btn" style="background:#222; color:white; flex:1" onclick="showMyPage()">👤 내 정보</button>
+                <button class="btn" style="background:#222; color:white; flex:1" onclick="showMyPage()">👤 정보</button>
                 <button class="btn" style="background:#222; color:white; flex:1" onclick="auth.signOut()">🚪 로그아웃</button>
             </div>
-            <button onclick="adminSeed()" style="margin-top:20px; font-size:10px; opacity:0.1; background:none; border:none; color:white;">Admin Seed</button>
+            <button onclick="adminSeed()" style="margin-top:20px; font-size:10px; opacity:0.1; background:none; border:none; color:white;">Seed</button>
         </div>
     </div>
 
@@ -74,28 +67,28 @@
         <div class="card">
             <h2>MY STATUS</h2>
             <div style="background:#111; padding:20px; border-radius:15px; border:1px solid #333;">
-                <p style="color:#888;">배틀 승점</p>
+                <p style="color:#888;">승점</p>
                 <h1 id="myScoreText" style="color:var(--battle); font-size:3rem;">0</h1>
                 <p id="myBestText" style="font-size:0.8rem; color:var(--gold);"></p>
             </div>
-            <button class="btn" onclick="showScreen('lobbyScreen')">로비로</button>
+            <button class="btn" onclick="showScreen('lobbyScreen')">뒤로</button>
         </div>
     </div>
 
     <div id="battleWaitScreen" class="screen">
-        <div class="card" style="border-color: var(--battle);">
+        <div class="card">
             <h2 style="color:var(--battle)">MATCHING...</h2>
-            <div style="border: 4px solid #333; border-top: 4px solid var(--battle); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto;"></div>
-            <p id="waitStatus">상대방을 찾는 중입니다...</p>
-            <button onclick="cancelMatch()" style="margin-top:15px; color:#888; border:none; background:none; cursor:pointer;">매칭 취소</button>
+            <div style="border:4px solid #333; border-top:4px solid var(--battle); border-radius:50%; width:40px; height:40px; animation:spin 1s linear infinite; margin:20px auto;"></div>
+            <p>상대를 찾는 중입니다...</p>
+            <button onclick="cancelMatch()" style="color:#888; border:none; background:none;">취소</button>
         </div>
     </div>
 
     <div id="gameScreen" class="screen">
         <div class="game-layout">
             <div class="rank-container">
-                <div class="rank-panel" style="border-color:var(--gold);"><div style="color:var(--gold); font-size:0.8rem; margin-bottom:5px;">👑 TOP 10</div><table class="rank-table"><tbody id="topRankList"></tbody></table></div>
-                <div class="rank-panel"><div style="color:var(--accent); font-size:0.8rem; margin-bottom:5px;">⚡ LIVE FEED</div><table class="rank-table"><tbody id="liveFeedList"></tbody></table></div>
+                <div class="rank-panel" style="border-color:var(--gold);"><div style="color:var(--gold); font-size:0.8rem;">👑 TOP 10</div><table class="rank-table"><tbody id="topRankList"></tbody></table></div>
+                <div class="rank-panel"><div style="color:var(--accent); font-size:0.8rem;">⚡ LIVE</div><table class="rank-table"><tbody id="liveFeedList"></tbody></table></div>
             </div>
             <div class="game-main">
                 <div class="game-header">
@@ -107,14 +100,13 @@
                     <div id="gimmickMsg" style="position:absolute; bottom:-18px; color:var(--warn); font-size:0.7rem; font-weight:bold; width:100%; text-align:center;"></div>
                 </div>
                 <div id="mainBoard" class="board-grid"><div class="center-guide"></div></div>
-                <button id="startBtn" class="btn" onclick="startGame()" style="margin-top:15px;">START GAME</button>
-                <button onclick="quitGame()" style="margin-top:10px; background:none; border:none; color:#555; cursor:pointer;">그만두기</button>
+                <button id="startBtn" class="btn" onclick="startGame()" style="margin-top:15px;">START</button>
+                <button onclick="quitGame()" style="margin-top:10px; background:none; border:none; color:#555;">그만두기</button>
             </div>
         </div>
     </div>
 
     <script>
-        // 파이어베이스 설정
         const firebaseConfig = {
             apiKey: "AIzaSyBZZuQHXYsbbJA3L1L8-yFSfbw1w15p3NE",
             authDomain: "rubigs.firebaseapp.com",
@@ -142,94 +134,37 @@
 
         function handleAuth(mode) {
             const email = document.getElementById('email').value, pw = document.getElementById('password').value, nick = document.getElementById('nickInput').value;
-            if(mode === 'signup') {
-                if(!nick) return alert("닉네임 필수!");
-                auth.createUserWithEmailAndPassword(email, pw).then(res => db.ref(`users/${res.user.uid}`).set({nickname: nick, score: 0})).catch(e => alert(e.message));
-            } else { auth.signInWithEmailAndPassword(email, pw).catch(e => alert(e.message)); }
+            if(mode === 'signup') { if(!nick) return alert("닉네임 필수!"); auth.createUserWithEmailAndPassword(email, pw).then(res => db.ref(`users/${res.user.uid}`).set({nickname: nick, score: 0})); }
+            else auth.signInWithEmailAndPassword(email, pw).catch(e => alert(e.message));
         }
 
-        function showScreen(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            const target = document.getElementById(id);
-            if(target) target.classList.add('active');
-            else console.error("화면 ID를 찾을 수 없음:", id);
-        }
-
+        function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); if(id==='gameScreen') resetEngine(); }
         function showMyPage() { showScreen('myPageScreen'); }
 
-        // --- 매칭 로직 (블랙스크린 방지 패치) ---
-        function findMatch() {
-            showScreen('battleWaitScreen');
-            document.getElementById('waitStatus').innerText = "매칭 서버 접속 중...";
-            const waitRef = db.ref('waitingQueue'); // 경로 통일
-            
-            waitRef.transaction(current => {
-                if (current === null) return currentUid;
-                if (current === currentUid) return currentUid; // 본인이 이미 대기 중인 경우
-                return null; // 매칭 성사 (대기열 비움)
-            }, (err, committed, snap) => {
-                if (err) { alert("매칭 오류!"); showScreen('lobbyScreen'); return; }
-                
-                if (committed && snap.val() === currentUid) {
-                    // 대기 모드
-                    document.getElementById('waitStatus').innerText = "상대방을 기다리고 있습니다...";
-                    waitRef.on('value', s => {
-                        if (s.val() === null) {
-                            db.ref('activeBattles').orderByChild('p1').equalTo(currentUid).limitToLast(1).once('value', b => {
-                                b.forEach(v => startBattle(v.key));
-                            });
-                        }
-                    });
-                } else {
-                    // 참가 모드
-                    const p1 = snap.val();
-                    const newB = db.ref('activeBattles').push();
-                    newB.set({p1, p2: currentUid, winner: null, timestamp: Date.now()}).then(() => {
-                        waitRef.set(null);
-                        startBattle(newB.key);
-                    });
-                }
-            });
-        }
-
-        function cancelMatch() { db.ref('waitingQueue').set(null); showScreen('lobbyScreen'); }
-
-        function startBattle(id) {
-            battleId = id; isBattle = true; 
-            showScreen('gameScreen');
-            resetEngine();
-            // 상대방 승리 감시
-            db.ref(`activeBattles/${id}/winner`).on('value', snap => {
-                if(snap.val() && snap.val() !== currentUid) {
-                    alert("상대방 클리어! 패배 (-3점)");
-                    updateScore(-3); quitGame();
-                }
-            });
-        }
-
-        // --- 게임 엔진 ---
         const COLORS = ['red', 'blue', 'green', 'yellow', 'orange', 'white'];
         let board = [], target = [], empty = {r:4, c:4}, isRunning = false, startTime = 0, timerInterval;
 
-        function startSolo() { isBattle = false; battleId = null; curLevel = 1; showScreen('gameScreen'); resetEngine(); }
-
+        function startSolo() { isBattle = false; battleId = null; curLevel = 1; showScreen('gameScreen'); }
+        
+        // [감독님 요청] 그만두기할 때 즉시 랭킹 등록 로직 추가
         function quitGame() {
+            if (isRunning && !isBattle) {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                if (elapsed > 1) { // 1초 이상 플레이했을 때만 등록
+                    saveRank(curLevel, elapsed);
+                    console.log("그만두기 기록 등록:", curLevel, elapsed);
+                }
+            }
             isRunning = false; clearInterval(timerInterval);
             if(battleId) { db.ref(`activeBattles/${battleId}`).off(); db.ref(`activeBattles/${battleId}`).remove(); battleId = null; }
             showScreen('lobbyScreen');
         }
 
-        function resetEngine() {
-            document.getElementById('startBtn').style.display = "block";
-            document.getElementById('timerText').innerText = "00:00";
-            document.getElementById('mainBoard').innerHTML = '<div class="center-guide"></div>';
-            document.getElementById('targetBoard').innerHTML = '';
-            document.getElementById('gimmickMsg').innerText = "";
-        }
+        function resetEngine() { document.getElementById('startBtn').style.display="block"; document.getElementById('timerText').innerText="00:00"; document.getElementById('mainBoard').innerHTML='<div class="center-guide"></div>'; document.getElementById('targetBoard').innerHTML=''; document.getElementById('gimmickMsg').innerText=""; }
 
         function startGame() {
             isRunning = true; startTime = Date.now();
-            document.getElementById('startBtn').style.display = "none";
+            document.getElementById('startBtn').style.display="none";
             if(timerInterval) clearInterval(timerInterval);
             timerInterval = setInterval(() => {
                 const s = Math.floor((Date.now()-startTime)/1000);
@@ -262,7 +197,7 @@
             const msg = document.getElementById('gimmickMsg');
             document.getElementById('lvText').innerText = isBattle ? "BATTLE" : `LV ${curLevel.toString().padStart(2,'0')}`;
             tb.style.animation = (!isBattle && curLevel===8) ? "blink 2s infinite" : "none";
-            if(!isBattle && curLevel >= 4 && curLevel <= 6) msg.innerText = "⚠ REVERSE CLEAR (좌우 반전으로 맞추세요!)";
+            if(!isBattle && curLevel >= 4 && curLevel <= 6) msg.innerText = "⚠ REVERSE MODE (좌우를 바꿔서 맞추세요!)";
             else msg.innerText = "";
         }
 
@@ -276,6 +211,7 @@
             let match = true;
             for(let r=0; r<3; r++) {
                 for(let c=0; c<3; c++) {
+                    // 4~6단계: 정답지와 좌우 반대로 맞추기 로직
                     if(!isBattle && curLevel >= 4 && curLevel <= 6) {
                         if(board[r+1][c+1] !== target[r][2-c]) match = false;
                     } else {
@@ -291,7 +227,7 @@
                 } else {
                     saveRank(curLevel, time);
                     if(curLevel<10) { alert(`LV ${curLevel} CLEAR!`); curLevel++; startGame(); }
-                    else { alert("🎉 ALL CLEAR!"); quitGame(); }
+                    else { alert("🎉 ALL STAGES CLEAR!"); quitGame(); }
                 }
             }
         }
@@ -302,15 +238,34 @@
             db.ref('rankings').on('value', snap => {
                 const d = []; snap.forEach(c => d.push(c.val()));
                 const sorted = [...d].sort((a,b)=> (b.level-a.level) || (a.time-b.time));
-                document.getElementById('topRankList').innerHTML = sorted.slice(0,10).map((v,i)=>`<tr style="${v.nickname===userNickname?'background:rgba(0,251,255,0.2)':''}"><td>${i+1}위 ${v.nickname}</td><td>LV${v.level}</td><td>${v.time}s</td></tr>`).join('');
+                // TOP 10 하이라이트 표시
+                document.getElementById('topRankList').innerHTML = sorted.slice(0,10).map((v,i)=>`<tr style="${v.nickname===userNickname?'background:rgba(0,251,255,0.2); font-weight:bold;':''}"><td>${i+1}위 ${v.nickname}</td><td>LV${v.level}</td><td>${v.time}s</td></tr>`).join('');
                 document.getElementById('liveFeedList').innerHTML = [...d].sort((a,b)=> b.timestamp-a.timestamp).slice(0,5).map(v=>`<tr><td>${v.nickname}</td><td>LV${v.level}</td><td>${v.time}s</td></tr>`).join('');
                 const myBest = sorted.find(v => v.nickname === userNickname);
-                if(myBest) document.getElementById('myBestText').innerText = `최고 기록: LV ${myBest.level} (${myBest.time}초)`;
+                if(myBest) document.getElementById('myBestText').innerText = `최고 도달: LV ${myBest.level} (${myBest.time}초)`;
             });
+        }
+
+        function findMatch() {
+            showScreen('battleWaitScreen');
+            const matchRef = db.ref('matchQueue');
+            matchRef.transaction(c => c?null:currentUid, (err, comm, snap)=> {
+                if(comm && snap.val()===currentUid) {
+                    matchRef.on('value', s => { if(!s.val()) db.ref('activeBattles').orderByChild('p1').equalTo(currentUid).limitToLast(1).once('value', b => b.forEach(v => startBattle(v.key))); });
+                } else if(comm) {
+                    const p1 = snap.val(); const b = db.ref('activeBattles').push();
+                    b.set({p1, p2: currentUid, winner: null, timestamp: Date.now()}).then(()=> { matchRef.set(null); startBattle(b.key); });
+                }
+            });
+        }
+        function cancelMatch() { db.ref('matchQueue').set(null); showScreen('lobbyScreen'); }
+        function startBattle(id) {
+            battleId = id; isBattle = true; showScreen('gameScreen'); resetEngine();
+            db.ref(`activeBattles/${id}/winner`).on('value', snap => { if(snap.val() && snap.val()!==currentUid) { alert("패배! (-3)"); updateScore(-3); quitGame(); } });
         }
         function adminSeed() {
             const data = [{nickname: "금주띠", level: 10, time: 75, timestamp: 1}, {nickname: "킹여울", level: 10, time: 76, timestamp: 2}];
-            data.forEach(v => db.ref('rankings').push(v)); alert("기록 주입 완료!");
+            data.forEach(v => db.ref('rankings').push(v)); alert("기록 주입!");
         }
     </script>
 </body>

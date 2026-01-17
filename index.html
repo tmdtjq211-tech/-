@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RUBIK'S RACE - FINAL RANKING FIX</title>
+    <title>RUBIK'S RACE - RANKING MASTER</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -30,7 +30,7 @@
         .game-layout { display: flex; flex-direction: column; align-items: center; gap: 15px; width: 100%; }
         .rank-panel { background: var(--panel); padding: 10px; border-radius: 12px; border: 1px solid #333; width: 100%; margin-bottom: 10px; }
         .rank-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; text-align: center; }
-        .rank-table td { padding: 4px 0; border-bottom: 1px solid #222; color: #ccc; }
+        .rank-table td { padding: 6px 0; border-bottom: 1px solid #222; color: #ccc; }
         .game-header { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 15px; background: #111; padding: 15px; border-radius: 15px; border: 1px solid #222; position: relative; box-sizing: border-box; }
         .target-box { display: grid; grid-template-columns: repeat(3, var(--target-tile)); gap: 3px; background: #000; padding: 5px; border-radius: 5px; border: 1px solid var(--accent); transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55); }
         .target-tile { width: var(--target-tile); height: var(--target-tile); border-radius: 2px; }
@@ -47,7 +47,7 @@
     <div id="authScreen" class="screen active">
         <div class="card">
             <h1 style="color:var(--accent); font-style:italic;">RUBIK'S RACE</h1>
-            <p style="color:#666; font-size:0.8rem; margin-bottom:20px;">RANKING FIX VER.</p>
+            <p style="color:#666; font-size:0.8rem; margin-bottom:20px;">RANKING MASTER VER.</p>
             <input type="text" id="nickInput" style="width:100%; padding:15px; margin-bottom:10px; background:#111; color:white; border:1px solid #333; border-radius:10px; box-sizing:border-box;" placeholder="닉네임 (필수)">
             <input type="email" id="email" style="width:100%; padding:15px; margin-bottom:10px; background:#111; color:white; border:1px solid #333; border-radius:10px; box-sizing:border-box;" placeholder="이메일">
             <input type="password" id="password" style="width:100%; padding:15px; margin-bottom:20px; background:#111; color:white; border:1px solid #333; border-radius:10px; box-sizing:border-box;" placeholder="비밀번호">
@@ -110,7 +110,7 @@
         <div class="game-layout">
             <div class="rank-panel">
                 <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                    <span style="color:var(--gold); font-size:0.8rem; font-weight:bold;">👑 TOP 10 (실시간)</span>
+                    <span style="color:var(--gold); font-size:0.8rem; font-weight:bold;">👑 TOP 10 (LIVE)</span>
                 </div>
                 <table class="rank-table"><tbody id="topRankList"></tbody></table>
             </div>
@@ -179,7 +179,7 @@
                         localStorage.setItem(`saveLv_${currentUid}`, curLevel);
                         document.getElementById('soloBtn').innerText = `🏆 솔로 랭킹전 시작 (LV ${curLevel.toString().padStart(2,'0')})`;
                         showScreen('lobbyScreen');
-                        loadRankings(); // 랭킹 로드
+                        loadRankings(); 
                     });
                 });
             } else { showScreen('authScreen'); }
@@ -374,50 +374,67 @@
             });
         }
 
-        // [최종 수정된 랭킹 로드 함수]
+        // [최종 수정됨: 빈칸 포함 10개 꽉 채우기]
         function loadRankings() {
-            // 모든 랭킹 데이터를 가져옴
             db.ref('rankings').on('value', snap => {
                 const listElement = document.getElementById('topRankList');
-                if (!snap.exists()) {
-                    listElement.innerHTML = "<tr><td colspan='4'>기록이 없습니다.</td></tr>";
-                    return;
+                if (!listElement) return;
+
+                let list = [];
+                // 1. 데이터 가져오기
+                if (snap.exists()) {
+                    snap.forEach(child => {
+                        const val = child.val();
+                        if (val.nickname) list.push(val);
+                    });
                 }
 
-                const list = [];
-                snap.forEach(c => list.push(c.val()));
-
-                // [강력한 정렬] 숫자로 변환하여 비교 (11 > 2 보장)
+                // 2. 정렬 (레벨 높은 순 -> 시간 짧은 순)
                 list.sort((a, b) => {
-                    const levelA = parseInt(a.level) || 0;
-                    const levelB = parseInt(b.level) || 0;
-                    const timeA = parseFloat(a.time) || 9999;
-                    const timeB = parseFloat(b.time) || 9999;
+                    const lvA = parseInt(a.level) || 0;
+                    const lvB = parseInt(b.level) || 0;
+                    const tmA = parseFloat(a.time) || 9999;
+                    const tmB = parseFloat(b.time) || 9999;
 
-                    // 레벨이 다르면 큰 게 위로 (내림차순)
-                    if (levelB !== levelA) return levelB - levelA;
-                    // 레벨이 같으면 시간 짧은 게 위로 (오름차순)
-                    return timeA - timeB;
+                    if (lvB !== lvA) return lvB - lvA;
+                    return tmA - tmB;
                 });
 
-                // 상위 10개만 자름
-                const top10 = list.slice(0, 10);
-
-                const html = top10.map((v, i) => {
-                    let rankIcon = i + 1;
-                    if (i === 0) rankIcon = "🥇";
-                    else if (i === 1) rankIcon = "🥈";
-                    else if (i === 2) rankIcon = "🥉";
-
-                    const isMe = v.nickname === userNickname ? 'color:var(--accent); font-weight:bold;' : '';
+                // 3. [핵심] 10명 강제 루프 (데이터 없으면 빈칸)
+                let html = "";
+                for (let i = 0; i < 10; i++) {
+                    const rank = i + 1;
+                    let rankIcon = rank;
                     
-                    return `<tr style="${isMe}">
-                        <td>${rankIcon}</td>
-                        <td style="text-align:left; padding-left:10px;">${v.nickname}</td>
-                        <td>LV ${v.level}</td>
-                        <td>${v.time}s</td>
-                    </tr>`;
-                }).join('');
+                    // 메달 아이콘
+                    if (rank === 1) rankIcon = "🥇";
+                    else if (rank === 2) rankIcon = "🥈";
+                    else if (rank === 3) rankIcon = "🥉";
+
+                    // 데이터가 존재하는 순위
+                    if (i < list.length) {
+                        const v = list[i];
+                        const isMe = (v.nickname === userNickname) ? 'color:var(--accent); font-weight:bold;' : '';
+                        
+                        html += `
+                            <tr style="${isMe}">
+                                <td>${rankIcon}</td>
+                                <td style="text-align:left; padding-left:10px;">${v.nickname}</td>
+                                <td>LV ${v.level}</td>
+                                <td>${v.time}s</td>
+                            </tr>`;
+                    } 
+                    // 데이터가 없는 순위 (빈 슬롯)
+                    else {
+                        html += `
+                            <tr style="color:#444;">
+                                <td>${rankIcon}</td>
+                                <td style="text-align:left; padding-left:10px;">-</td>
+                                <td>-</td>
+                                <td>-</td>
+                            </tr>`;
+                    }
+                }
                 
                 listElement.innerHTML = html;
             });

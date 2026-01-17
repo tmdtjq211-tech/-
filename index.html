@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RUBIK'S RACE - FINAL UI</title>
+    <title>RUBIK'S RACE - FINAL DESIGN</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -27,21 +27,40 @@
         .btn-mode.selected { background: var(--battle); color: white; border-color: var(--battle); box-shadow: 0 0 10px rgba(255,136,0,0.3); }
         .btn-battle { background: var(--battle); color: white; }
         .btn-sub { background: #333; color: #ccc; font-size: 0.9rem; padding: 12px; margin-top:5px;}
-        .game-layout { display: flex; flex-direction: column; align-items: center; gap: 15px; width: 100%; }
+        .game-layout { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; }
         
-        /* [수정됨] 랭킹 팝업(모달) 스타일 */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 999; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
         .modal-content { background: var(--panel); padding: 20px; border-radius: 15px; width: 90%; max-width: 400px; max-height: 80vh; overflow-y: auto; border: 1px solid var(--accent); text-align: center; position: relative; }
         .modal-active { display: flex; }
         
         .rank-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; text-align: center; margin-top: 10px; }
         .rank-table td { padding: 8px 0; border-bottom: 1px solid #333; color: #ccc; }
-        .game-header { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 15px; background: #111; padding: 15px; border-radius: 15px; border: 1px solid #222; position: relative; box-sizing: border-box; }
+        
+        .game-header { display: flex; justify-content: space-between; align-items: center; width: 100%; background: #111; padding: 15px; border-radius: 15px; border: 1px solid #222; position: relative; box-sizing: border-box; }
+        
+        /* [수정됨] 기믹 메시지 디자인 개선 */
+        #gimmickMsg {
+            width: 100%;
+            text-align: center;
+            background: rgba(30, 30, 30, 0.8);
+            border: 1px solid #444;
+            border-radius: 10px;
+            padding: 8px;
+            color: #ccc; /* 기본 색상 */
+            font-size: 0.9rem;
+            font-weight: bold;
+            min-height: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
         .target-box { display: grid; grid-template-columns: repeat(3, var(--target-tile)); gap: 3px; background: #000; padding: 5px; border-radius: 5px; border: 1px solid var(--accent); transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55); }
         .target-tile { width: var(--target-tile); height: var(--target-tile); border-radius: 2px; }
         .board-grid { display: grid; grid-template-columns: repeat(5, var(--tile)); grid-template-rows: repeat(5, var(--tile)); gap: var(--gap); background: #111; padding: 10px; border-radius: 12px; position: relative; box-shadow: inset 0 0 20px #000; }
         .tile { width: 100%; height: 100%; border-radius: 6px; cursor: pointer; transition: transform 0.1s; }
         .center-guide { position: absolute; top: calc(var(--tile) + var(--gap) + 10px - 2px); left: calc(var(--tile) + var(--gap) + 10px - 2px); width: calc(var(--tile)*3 + var(--gap)*2 + 4px); height: calc(var(--tile)*3 + var(--gap)*2 + 4px); border: 3px solid var(--accent); border-radius: 8px; pointer-events: none; z-index: 10; box-shadow: 0 0 15px var(--accent); }
+        
         .red { background: #FF003C; } .blue { background: #007BFF; } .green { background: #00FF6A; } .yellow { background: #FFD700; } .orange { background: #FF8800; } .white { background: #FFFFFF; } .empty { background: #222; }
         @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
         @media (max-width: 400px) { :root { --tile: 50px; --target-tile: 18px; } }
@@ -52,7 +71,7 @@
     <div id="authScreen" class="screen active">
         <div class="card">
             <h1 style="color:var(--accent); font-style:italic;">RUBIK'S RACE</h1>
-            <p style="color:#666; font-size:0.8rem; margin-bottom:20px;">FINAL UI VER.</p>
+            <p style="color:#666; font-size:0.8rem; margin-bottom:20px;">FINAL DESIGN VER.</p>
             <input type="text" id="nickInput" style="width:100%; padding:15px; margin-bottom:10px; background:#111; color:white; border:1px solid #333; border-radius:10px; box-sizing:border-box;" placeholder="닉네임 (필수)">
             <input type="email" id="email" style="width:100%; padding:15px; margin-bottom:10px; background:#111; color:white; border:1px solid #333; border-radius:10px; box-sizing:border-box;" placeholder="이메일">
             <input type="password" id="password" style="width:100%; padding:15px; margin-bottom:20px; background:#111; color:white; border:1px solid #333; border-radius:10px; box-sizing:border-box;" placeholder="비밀번호">
@@ -113,7 +132,7 @@
 
     <div id="gameScreen" class="screen">
         <div class="game-layout">
-            <button onclick="toggleRanking(true)" style="width:100%; background:#222; border:1px solid #444; color:var(--gold); padding:10px; border-radius:10px; font-weight:bold; margin-bottom:5px;">🏆 실시간 랭킹 보기 (TOP 10)</button>
+            <button onclick="toggleRanking(true)" style="width:100%; background:#222; border:1px solid #444; color:var(--gold); padding:10px; border-radius:10px; font-weight:bold;">🏆 실시간 랭킹 보기</button>
             
             <div style="width:100%;">
                 <div class="game-header">
@@ -122,8 +141,10 @@
                         <div id="lvText" style="font-size:0.8rem; color:var(--accent); margin-bottom:5px;">LV 01</div>
                         <div id="timerText" style="font-size:1.8rem; font-weight:bold; font-variant-numeric: tabular-nums;">00:00</div>
                     </div>
-                    <div id="gimmickMsg" style="position:absolute; bottom:-25px; left:0; width:100%; text-align:center; color:var(--warn); font-size:0.8rem; font-weight:bold; text-shadow:0 0 5px black;"></div>
                 </div>
+                
+                <div id="gimmickMsg"></div>
+
                 <div id="mainBoard" class="board-grid"><div class="center-guide"></div></div>
                 <button id="startBtn" class="btn" onclick="startGame()">GAME START</button>
                 <button onclick="quitGame()" style="background:none; border:none; color:#555; text-decoration:underline; margin-top:15px; cursor:pointer;">그만두기 (기록 저장)</button>
@@ -211,7 +232,6 @@
         function showMyPage() { showScreen('myPageScreen'); }
         function selectBattleMode(m) { selectedMode = m; document.querySelectorAll('.btn-mode').forEach(b => b.classList.remove('selected')); document.getElementById(`mode_${m}`).classList.add('selected'); }
         
-        // [랭킹 팝업 열고 닫기 함수]
         function toggleRanking(show) {
             const modal = document.getElementById('rankingModal');
             if(show) modal.classList.add('modal-active');
@@ -229,10 +249,16 @@
         }
 
         function startSolo() { isBattle = false; battleId = null; sharedTarget = null; gimmickMap = generateSoloGimmicks(); showScreen('gameScreen'); }
+        
+        // [수정됨] 엔진 리셋 시 메시지 초기화
         function resetEngine() { 
             document.getElementById('startBtn').style.display = "block"; document.getElementById('timerText').innerText = "00:00"; 
             document.getElementById('mainBoard').innerHTML = '<div class="center-guide"></div>'; document.getElementById('targetBoard').innerHTML = ''; document.getElementById('targetBoard').style.transform = "rotate(0deg)"; 
-            document.getElementById('gimmickMsg').innerText = ""; timeRotation = 0; 
+            // 메시지를 안 보이게 초기화
+            const msg = document.getElementById('gimmickMsg');
+            msg.innerText = "";
+            msg.style.display = "none";
+            timeRotation = 0; 
         }
 
         function startGame() { isRunning = true; startTime = Date.now(); document.getElementById('startBtn').style.display = "none"; if(timerInterval) clearInterval(timerInterval); timerInterval = setInterval(gameLoop, 1000); initLevel(); }
@@ -248,7 +274,14 @@
                     const msg = document.getElementById('gimmickMsg');
                     const prevText = msg.innerText;
                     msg.innerText = "⚡ 3분 경과! 정답판 회전! ⚡";
-                    setTimeout(() => msg.innerText = prevText, 3000);
+                    msg.style.color = "var(--warn)";
+                    setTimeout(() => {
+                         // 원래 메시지로 복귀
+                         const g = isBattle ? battleGimmick : gimmickMap[curLevel - 1];
+                         const gimmickKr = { 'NORMAL': "정답지와 똑같이 맞추세요!", 'REVERSE': "⚠ 좌우 반전! (거울 모드)", 'V_FLIP': "⚠ 상하 반전! (위아래 뒤집기)", 'ROTATE_CW': "⚠ 90도 회전! (오른쪽으로 돌리기)", 'BLINK': "⚠ 암기 모드! (깜빡임 주의)", 'BLIND': "⚠ 심안 모드! (가운데 색 추리)", 'HARD_RANDOM': "⚠ 혼돈의 카오스! (복합 기믹)" };
+                         msg.innerText = gimmickKr[g] || "정답지와 똑같이 맞추세요!";
+                         if (g === 'NORMAL') msg.style.color = "#ccc"; else msg.style.color = "var(--warn)";
+                    }, 3000);
                 }
             }
         }
@@ -285,8 +318,19 @@
             };
 
             document.getElementById('lvText').innerText = isBattle ? `BATTLE` : `LV ${curLevel.toString().padStart(2,'0')}`;
+            
+            // [수정됨] 메시지 업데이트 및 색상 처리
             const msg = document.getElementById('gimmickMsg');
+            msg.style.display = "flex"; // 보이게 설정
             msg.innerText = gimmickKr[g] || "정답지와 똑같이 맞추세요!";
+            
+            if (g === 'NORMAL') {
+                msg.style.color = "#ccc";
+                msg.style.borderColor = "#444";
+            } else {
+                msg.style.color = "var(--warn)"; // 경고색
+                msg.style.borderColor = "var(--warn)";
+            }
             
             tb.style.animation = (g === 'BLINK') ? "blink 1.5s infinite" : "none";
         }
@@ -372,7 +416,6 @@
             });
         }
 
-        // [랭킹 로드 (빈칸 채우기 포함)]
         function loadRankings() {
             db.ref('rankings').on('value', snap => {
                 const listElement = document.getElementById('topRankList');

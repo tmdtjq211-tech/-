@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RUBIK'S RACE - FINAL FIXED</title>
+    <title>RUBIK'S RACE - FINAL RANKING FIX</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -47,7 +47,7 @@
     <div id="authScreen" class="screen active">
         <div class="card">
             <h1 style="color:var(--accent); font-style:italic;">RUBIK'S RACE</h1>
-            <p style="color:#666; font-size:0.8rem; margin-bottom:20px;">COMPLETE VER.</p>
+            <p style="color:#666; font-size:0.8rem; margin-bottom:20px;">RANKING FIX VER.</p>
             <input type="text" id="nickInput" style="width:100%; padding:15px; margin-bottom:10px; background:#111; color:white; border:1px solid #333; border-radius:10px; box-sizing:border-box;" placeholder="닉네임 (필수)">
             <input type="email" id="email" style="width:100%; padding:15px; margin-bottom:10px; background:#111; color:white; border:1px solid #333; border-radius:10px; box-sizing:border-box;" placeholder="이메일">
             <input type="password" id="password" style="width:100%; padding:15px; margin-bottom:20px; background:#111; color:white; border:1px solid #333; border-radius:10px; box-sizing:border-box;" placeholder="비밀번호">
@@ -110,7 +110,7 @@
         <div class="game-layout">
             <div class="rank-panel">
                 <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                    <span style="color:var(--gold); font-size:0.8rem; font-weight:bold;">👑 TOP 10</span>
+                    <span style="color:var(--gold); font-size:0.8rem; font-weight:bold;">👑 TOP 10 (실시간)</span>
                 </div>
                 <table class="rank-table"><tbody id="topRankList"></tbody></table>
             </div>
@@ -179,7 +179,7 @@
                         localStorage.setItem(`saveLv_${currentUid}`, curLevel);
                         document.getElementById('soloBtn').innerText = `🏆 솔로 랭킹전 시작 (LV ${curLevel.toString().padStart(2,'0')})`;
                         showScreen('lobbyScreen');
-                        loadRankings(); 
+                        loadRankings(); // 랭킹 로드
                     });
                 });
             } else { showScreen('authScreen'); }
@@ -374,9 +374,9 @@
             });
         }
 
-        // [랭킹 수정 완료]
+        // [최종 수정된 랭킹 로드 함수]
         function loadRankings() {
-            // 모든 데이터를 가져옴 (orderBy, limitToLast 제거)
+            // 모든 랭킹 데이터를 가져옴
             db.ref('rankings').on('value', snap => {
                 const listElement = document.getElementById('topRankList');
                 if (!snap.exists()) {
@@ -387,16 +387,16 @@
                 const list = [];
                 snap.forEach(c => list.push(c.val()));
 
-                // [강력한 정렬] 숫자 타입으로 변환 후 비교
+                // [강력한 정렬] 숫자로 변환하여 비교 (11 > 2 보장)
                 list.sort((a, b) => {
                     const levelA = parseInt(a.level) || 0;
                     const levelB = parseInt(b.level) || 0;
                     const timeA = parseFloat(a.time) || 9999;
                     const timeB = parseFloat(b.time) || 9999;
 
-                    // 레벨이 다르면: 큰 게 위로 (내림차순)
+                    // 레벨이 다르면 큰 게 위로 (내림차순)
                     if (levelB !== levelA) return levelB - levelA;
-                    // 레벨이 같으면: 시간 짧은 게 위로 (오름차순)
+                    // 레벨이 같으면 시간 짧은 게 위로 (오름차순)
                     return timeA - timeB;
                 });
 

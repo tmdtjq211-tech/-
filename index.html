@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RUBIK'S RACE - FINAL MASTER</title>
+    <title>RUBIK'S RACE - FINAL FIXED</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -179,7 +179,7 @@
                         localStorage.setItem(`saveLv_${currentUid}`, curLevel);
                         document.getElementById('soloBtn').innerText = `🏆 솔로 랭킹전 시작 (LV ${curLevel.toString().padStart(2,'0')})`;
                         showScreen('lobbyScreen');
-                        loadRankings(); // 랭킹 로드
+                        loadRankings(); 
                     });
                 });
             } else { showScreen('authScreen'); }
@@ -374,18 +374,52 @@
             });
         }
 
-        // [중요: 랭킹 정렬 및 로드]
+        // [랭킹 수정 완료]
         function loadRankings() {
-            db.ref('rankings').orderByChild('level').limitToLast(10).on('value', snap => {
+            // 모든 데이터를 가져옴 (orderBy, limitToLast 제거)
+            db.ref('rankings').on('value', snap => {
+                const listElement = document.getElementById('topRankList');
+                if (!snap.exists()) {
+                    listElement.innerHTML = "<tr><td colspan='4'>기록이 없습니다.</td></tr>";
+                    return;
+                }
+
                 const list = [];
                 snap.forEach(c => list.push(c.val()));
 
-                // [핵심] 여기서 데이터를 받았을 때, 다시 한 번 확실하게 정렬해줍니다.
-                // 레벨 내림차순 (높은게 위로), 시간 오름차순 (짧은게 위로)
-                list.sort((a, b) => (b.level - a.level) || (a.time - b.time));
+                // [강력한 정렬] 숫자 타입으로 변환 후 비교
+                list.sort((a, b) => {
+                    const levelA = parseInt(a.level) || 0;
+                    const levelB = parseInt(b.level) || 0;
+                    const timeA = parseFloat(a.time) || 9999;
+                    const timeB = parseFloat(b.time) || 9999;
 
-                const html = list.map((v, i) => `<tr style="${v.nickname === userNickname ? 'color:var(--accent); font-weight:bold;' : ''}"><td>${i+1}</td><td>${v.nickname}</td><td>LV ${v.level}</td><td>${v.time}s</td></tr>`).join('');
-                document.getElementById('topRankList').innerHTML = html;
+                    // 레벨이 다르면: 큰 게 위로 (내림차순)
+                    if (levelB !== levelA) return levelB - levelA;
+                    // 레벨이 같으면: 시간 짧은 게 위로 (오름차순)
+                    return timeA - timeB;
+                });
+
+                // 상위 10개만 자름
+                const top10 = list.slice(0, 10);
+
+                const html = top10.map((v, i) => {
+                    let rankIcon = i + 1;
+                    if (i === 0) rankIcon = "🥇";
+                    else if (i === 1) rankIcon = "🥈";
+                    else if (i === 2) rankIcon = "🥉";
+
+                    const isMe = v.nickname === userNickname ? 'color:var(--accent); font-weight:bold;' : '';
+                    
+                    return `<tr style="${isMe}">
+                        <td>${rankIcon}</td>
+                        <td style="text-align:left; padding-left:10px;">${v.nickname}</td>
+                        <td>LV ${v.level}</td>
+                        <td>${v.time}s</td>
+                    </tr>`;
+                }).join('');
+                
+                listElement.innerHTML = html;
             });
         }
     </script>

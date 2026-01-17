@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RUBIK'S RACE - COMPLETE</title>
+    <title>RUBIK'S RACE - FINAL MASTER</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -159,13 +159,11 @@
                     userNickname = d ? d.nickname : user.email.split('@')[0];
                     document.getElementById('displayNick').innerText = userNickname;
                     
-                    // 마이페이지용 점수 업데이트
                     document.getElementById('myPageNick').innerText = userNickname;
                     document.getElementById('myPageScore').innerText = (d && d.score ? d.score : 0) + "점";
                     
                     db.ref('rankings/' + userNickname).once('value', rSnap => {
                         const rData = rSnap.val();
-                        // 마이페이지용 기록 업데이트
                         if(rData) {
                             document.getElementById('myPageLv').innerText = "LV " + rData.level;
                             document.getElementById('myPageTime').innerText = rData.time + "초";
@@ -181,7 +179,7 @@
                         localStorage.setItem(`saveLv_${currentUid}`, curLevel);
                         document.getElementById('soloBtn').innerText = `🏆 솔로 랭킹전 시작 (LV ${curLevel.toString().padStart(2,'0')})`;
                         showScreen('lobbyScreen');
-                        loadRankings();
+                        loadRankings(); // 랭킹 로드
                     });
                 });
             } else { showScreen('authScreen'); }
@@ -375,10 +373,17 @@
                 return current;
             });
         }
+
+        // [중요: 랭킹 정렬 및 로드]
         function loadRankings() {
             db.ref('rankings').orderByChild('level').limitToLast(10).on('value', snap => {
-                const list = []; snap.forEach(c => list.push(c.val()));
+                const list = [];
+                snap.forEach(c => list.push(c.val()));
+
+                // [핵심] 여기서 데이터를 받았을 때, 다시 한 번 확실하게 정렬해줍니다.
+                // 레벨 내림차순 (높은게 위로), 시간 오름차순 (짧은게 위로)
                 list.sort((a, b) => (b.level - a.level) || (a.time - b.time));
+
                 const html = list.map((v, i) => `<tr style="${v.nickname === userNickname ? 'color:var(--accent); font-weight:bold;' : ''}"><td>${i+1}</td><td>${v.nickname}</td><td>LV ${v.level}</td><td>${v.time}s</td></tr>`).join('');
                 document.getElementById('topRankList').innerHTML = html;
             });

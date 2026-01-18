@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RUBIK'S RACE - AI MASTER</title>
+    <title>RUBIK'S RACE - REAL AI MOTION</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
@@ -26,7 +26,7 @@
         .screen { display: none; width: 100%; max-width: 500px; padding: 15px; box-sizing: border-box; flex-direction: column; align-items: center; height: 100vh; justify-content: center; position: relative; }
         .active { display: flex; }
         
-        .card { background: var(--panel); padding: 20px; border-radius: 20px; width: 100%; border: 1px solid #222; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 95%; box-sizing: border-box; }
+        .card { background: var(--panel); padding: 20px; border-radius: 20px; width: 100%; border: 1px solid #222; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 95%; box-sizing: border-box; z-index: 5; }
         .btn { width: 100%; padding: 14px; background: var(--accent); color: #000; font-weight: bold; border: none; border-radius: 12px; cursor: pointer; margin-top: 8px; font-size: 1rem; }
         .btn:disabled { background: #333; color: #777; }
         .btn-sub { background: #222; border: 1px solid #444; color: #ccc; font-size: 0.8rem; padding: 8px 12px; border-radius: 8px; cursor: pointer; }
@@ -53,7 +53,7 @@
         .opp-section { width: 100%; background: #080808; padding: 10px; border-radius: 12px; border: 1px solid #333; margin-bottom: 10px; display: none; box-sizing: border-box; }
         .ai-section { width: 100%; background: #150015; padding: 10px; border-radius: 12px; border: 1px solid var(--ai); margin-bottom: 10px; display: none; box-sizing: border-box; }
         
-        .mini-board { display: grid; grid-template-columns: repeat(5, var(--opp-tile)); gap: 2px; }
+        .mini-board { display: grid; grid-template-columns: repeat(5, var(--opp-tile)); gap: 2px; justify-content: center; }
         .mini-tile { width: var(--opp-tile); height: var(--opp-tile); border-radius: 2px; }
 
         /* AI Progress Bar */
@@ -117,7 +117,7 @@
         <div id="aiArea" class="ai-section">
             <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:5px; color:var(--ai);">
                 <span>🤖 AI (LV.<span id="aiLevelText">1</span>)</span>
-                <span id="aiStatusText">계산중...</span>
+                <span id="aiStatusText">준비 중</span>
             </div>
             <div style="display:flex; justify-content:center;">
                 <div id="aiBoard" class="mini-board"></div>
@@ -177,7 +177,9 @@
         let board = [], target = [], empty = {r:4, c:4};
         let isRunning = false, startTime = 0, timerInterval = null;
         let activeItem = null, selectedTile = null;
-        let aiInterval = null, aiTimeMax = 0, aiTimeCur = 0; // AI 변수
+        
+        // AI 관련 변수
+        let aiBoard = [], aiEmpty = {r:4, c:4}, aiInterval = null, aiTimeMax = 0, aiTimeCur = 0;
 
         const COLORS = ['red', 'blue', 'green', 'yellow', 'orange', 'white'];
         const ITEMS = [
@@ -264,43 +266,70 @@
             });
         }
 
-        // --- AI 시스템 (핵심) ---
+        // --- AI 시스템 (핵심: 리얼타임 무빙) ---
         function initAI() {
-            // 레벨이 오를수록 AI 시간(제한시간)이 줄어듬 = AI가 빨리 품
             const lv = userData.level;
-            // Lv 1: 90초, Lv 10: 45초, Lv 20: 30초
+            // Lv 1: 90초, Lv 10: 45초, Lv 20: 30초 (난이도)
             aiTimeMax = Math.max(30, 95 - (lv * 5)); 
             aiTimeCur = 0;
             
-            // AI 시각화용 보드 (가짜 데이터)
+            // AI 보드 초기화
             let p = []; COLORS.forEach(c => { for(let i=0; i<4; i++) p.push(c); }); p.push(COLORS[0]); p.sort(()=>Math.random()-0.5);
-            let aiB = []; for(let r=0; r<5; r++){ let row=[]; for(let c=0; c<5; c++) row.push(p.pop()); aiB.push(row); }
+            aiBoard = [];
+            for(let r=0; r<5; r++){
+                let row=[]; 
+                for(let c=0; c<5; c++){
+                    if(r===4&&c===4){ row.push('empty'); aiEmpty={r:4,c:4}; }
+                    else row.push(p.pop());
+                }
+                aiBoard.push(row); 
+            }
             
-            const el = document.getElementById('aiBoard'); el.innerHTML='';
-            aiB.forEach(row => row.forEach(col => { const d=document.createElement('div'); d.className=`mini-tile ${col}`; el.appendChild(d); }));
-            
+            renderMini('aiBoard', aiBoard);
             document.getElementById('aiLevelText').innerText = lv;
-            document.getElementById('aiStatusText').innerText = "대결 중!";
+            document.getElementById('aiStatusText').innerText = "대기 중";
             document.getElementById('aiProgressBar').style.width = '0%';
         }
 
         function startAILoop() {
+            document.getElementById('aiStatusText').innerText = "생각 중...";
             if (aiInterval) clearInterval(aiInterval);
+            
+            // AI가 0.3초마다 실제로 움직이는 것처럼 시뮬레이션
             aiInterval = setInterval(() => {
                 if (!isRunning) return;
-                aiTimeCur += 0.5;
                 
-                // AI 게이지 바 업데이트
+                aiTimeCur += 0.3; // 시간 증가
+                
+                // 1. AI 빈칸 주변 타일 찾기
+                let neighbors = [];
+                const dr = [-1, 1, 0, 0], dc = [0, 0, -1, 1];
+                for(let i=0; i<4; i++){
+                    const nr = aiEmpty.r + dr[i];
+                    const nc = aiEmpty.c + dc[i];
+                    if(nr>=0 && nr<5 && nc>=0 && nc<5) neighbors.push({r:nr, c:nc});
+                }
+                
+                // 2. 랜덤한 이웃 타일 하나를 빈칸으로 이동 (AI가 맞추는 척)
+                if(neighbors.length > 0) {
+                    const pick = neighbors[Math.floor(Math.random() * neighbors.length)];
+                    aiBoard[aiEmpty.r][aiEmpty.c] = aiBoard[pick.r][pick.c];
+                    aiBoard[pick.r][pick.c] = 'empty';
+                    aiEmpty = pick;
+                    renderMini('aiBoard', aiBoard); // 화면 갱신
+                }
+
+                // 3. 진행바 업데이트
                 const pct = (aiTimeCur / aiTimeMax) * 100;
                 document.getElementById('aiProgressBar').style.width = `${pct}%`;
                 
-                // AI 패배 조건 (시간 초과 = AI가 다 품)
+                // 4. AI 패배 조건 (시간 초과 = AI가 다 품)
                 if (aiTimeCur >= aiTimeMax) {
                     isRunning = false; clearInterval(timerInterval); clearInterval(aiInterval);
-                    alert(`💀 AI가 먼저 맞췄습니다! 패배!\n(AI 기록: ${aiTimeMax}초)`);
+                    alert(`💀 AI가 먼저 맞췄습니다! 패배!\n(AI 기록: ${aiTimeMax.toFixed(1)}초)`);
                     quitGame();
                 }
-            }, 500);
+            }, 300); // 0.3초마다 이동
         }
 
         // --- 게임 시작 ---
@@ -437,18 +466,11 @@
                 return;
             }
 
-            // 기믹: MIRROR (Lv 11~15) - 좌우 반전
-            // 클릭한 타일이 아니라, 빈 칸을 기준으로 반대편을 클릭해야 움직이는 것처럼 혼란을 줌
+            // 기믹: MIRROR (Lv 11~15) - 클릭 좌표 반전
             let targetR = r;
             let targetC = c;
-            
             if (myRole === 'solo' && userData.level >= 11 && userData.level <= 15) {
-                // 좌우 반전 로직: 내가 클릭한 칸의 대칭점(가로 기준)을 인식
-                // 예: 0열 클릭 -> 4열 인식
-                // 하지만 터치 인터페이스 특성상 너무 어려우므로, "클릭한 타일이 반대 방향으로 밀림" 효과 적용
-                // 여기서는 "입력 좌표 반전" 적용:
-                // 사용자가 (r, c)를 눌렀지만 시스템은 (r, 4-c)를 누른 것으로 처리
-                targetC = 4 - c; 
+                targetC = 4 - c; // 가로 대칭
             }
 
             if (Math.abs(targetR - empty.r) + Math.abs(targetC - empty.c) === 1) {

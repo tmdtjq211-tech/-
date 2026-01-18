@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RUBIK'S RACE - FIXED</title>
+    <title>RUBIK'S RACE - INFINITE</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
@@ -28,7 +28,7 @@
         
         .card { background: var(--panel); padding: 20px; border-radius: 20px; width: 100%; border: 1px solid #222; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 95%; box-sizing: border-box; z-index: 5; }
         .btn { width: 100%; padding: 14px; background: var(--accent); color: #000; font-weight: bold; border: none; border-radius: 12px; cursor: pointer; margin-top: 8px; font-size: 1rem; }
-        .btn:disabled { background: #444; color: #888; cursor: not-allowed; opacity: 0.7; }
+        .btn:disabled { background: #444; color: #888; cursor: not-allowed; }
         .btn-sub { background: #222; border: 1px solid #444; color: #ccc; font-size: 0.8rem; padding: 8px 12px; border-radius: 8px; cursor: pointer; }
 
         input { width: 100%; padding: 14px; background: #111; color: white; border: 1px solid #333; border-radius: 10px; margin-bottom: 10px; box-sizing: border-box; font-size: 1rem; }
@@ -39,7 +39,7 @@
         .tile { width: var(--tile); height: var(--tile); border-radius: 6px; cursor: pointer; transition: transform 0.1s; }
         .tile.selected { border: 2px solid white; transform: scale(0.95); }
         
-        /* 중앙 가이드라인 */
+        /* 중앙 가이드라인 (중요) */
         .center-guide {
             position: absolute; top: calc(10px + var(--tile) + var(--gap) - 2px); left: calc(10px + var(--tile) + var(--gap) - 2px);
             width: calc(var(--tile)*3 + var(--gap)*2); height: calc(var(--tile)*3 + var(--gap)*2);
@@ -47,10 +47,10 @@
             box-shadow: 0 0 15px rgba(0, 251, 255, 0.15);
         }
 
-        .target-box { display: grid; grid-template-columns: repeat(3, var(--target-tile)); gap: 3px; background: #111; padding: 5px; border-radius: 8px; border: 2px solid #444; min-height: 80px; min-width: 80px; opacity: 1; }
+        .target-box { display: grid; grid-template-columns: repeat(3, var(--target-tile)); gap: 3px; background: #111; padding: 5px; border-radius: 8px; border: 2px solid #444; min-height: 80px; min-width: 80px; opacity: 1; transition: opacity 0.3s; }
         .target-tile { width: var(--target-tile); height: var(--target-tile); border-radius: 2px; }
         
-        /* 상대방/AI 영역 */
+        /* AI & 상대방 영역 */
         .opp-section { width: 100%; background: #080808; padding: 10px; border-radius: 12px; border: 1px solid #333; margin-bottom: 10px; display: none; box-sizing: border-box; }
         .ai-section { width: 100%; background: #150015; padding: 10px; border-radius: 12px; border: 1px solid var(--ai); margin-bottom: 10px; display: none; box-sizing: border-box; }
         
@@ -63,12 +63,28 @@
         .inventory { display: flex; gap: 8px; overflow-x: auto; width: 100%; padding: 5px 0; margin-bottom: 5px; }
         .inv-slot { flex: 0 0 auto; background: #1a1a1a; border: 1px solid #333; padding: 6px 12px; border-radius: 8px; font-size: 0.75rem; cursor: pointer; color:#ccc; }
         
-        /* 게임 준비 오버레이 (버튼 겹침 방지) */
+        /* 레벨업 오버레이 */
+        .level-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 200;
+            display: none; flex-direction: column; justify-content: center; align-items: center;
+            backdrop-filter: blur(5px);
+        }
+        .level-text { font-size: 3rem; color: var(--gold); font-weight: bold; animation: pop 0.5s; text-shadow: 0 0 20px var(--gold); }
+        @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
+        /* 준비 오버레이 */
         #readyOverlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.9); z-index: 100;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
         }
+
+        /* 튜토리얼 모달 */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 999; justify-content: center; align-items: center; }
+        .tut-content { background: #1a1a1a; padding: 20px; border-radius: 15px; border: 1px solid var(--accent); max-width: 320px; text-align: center; }
+        .tut-demo { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 20px 0; }
+        .tut-box { border: 2px solid #555; padding: 5px; border-radius: 5px; }
 
         .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-height: 50vh; overflow-y: auto; width: 100%; }
         .rank-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; color: #ccc; margin-top: 10px; }
@@ -99,6 +115,7 @@
                     <div style="color:var(--gold); font-size:0.9rem;">💰 <span id="coinText">0</span></div>
                 </div>
                 <div style="display:flex; gap:5px;">
+                    <button class="btn-sub" onclick="openTutorial()">❓ 설명</button>
                     <button class="btn-sub" onclick="renderShop(); showScreen('shopScreen');">🛒 상점</button>
                     <button class="btn-sub" onclick="loadRankings()">🏆 랭킹</button>
                 </div>
@@ -116,11 +133,51 @@
         </div>
     </div>
 
+    <div id="tutorialModal" class="modal">
+        <div class="tut-content">
+            <h2 style="color:var(--accent); margin-top:0;">게임 방법</h2>
+            <p style="color:#ccc; font-size:0.9rem;">
+                5x5 보드의 타일을 슬라이드해서<br>
+                <strong style="color:var(--gold)">가운데 3x3 영역</strong>을<br>
+                <strong>정답지(Target)</strong>와 똑같이 만드세요!
+            </p>
+            <div class="tut-demo">
+                <div>
+                    <div style="font-size:0.7rem; margin-bottom:5px;">정답지</div>
+                    <div class="tut-box" style="width:50px; height:50px; display:grid; grid-template-columns:repeat(3,1fr); gap:2px;">
+                        <div class="red"></div><div class="blue"></div><div class="green"></div>
+                        <div class="yellow"></div><div class="orange"></div><div class="white"></div>
+                        <div class="red"></div><div class="blue"></div><div class="green"></div>
+                    </div>
+                </div>
+                <div style="font-size:1.5rem; color:var(--accent);">➡</div>
+                <div>
+                    <div style="font-size:0.7rem; margin-bottom:5px;">내 보드 (중앙)</div>
+                    <div class="tut-box" style="width:60px; height:60px; position:relative; background:#000;">
+                        <div style="position:absolute; top:5px; left:5px; width:46px; height:46px; border:2px solid var(--accent); z-index:2;"></div>
+                        <div style="position:absolute; top:7px; left:7px; width:42px; height:42px; display:grid; grid-template-columns:repeat(3,1fr); gap:2px;">
+                            <div class="red"></div><div class="blue"></div><div class="green"></div>
+                            <div class="yellow"></div><div class="orange"></div><div class="white"></div>
+                            <div class="red"></div><div class="blue"></div><div class="green"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <p style="font-size:0.8rem; color:#888;">바깥쪽 테두리는 맞추는 공간이 아닙니다.<br>오직 가운데만 신경쓰세요!</p>
+            <button class="btn" onclick="closeTutorial()">알겠습니다!</button>
+        </div>
+    </div>
+
     <div id="shopScreen" class="screen"><div class="card"><h2 style="color:var(--gold);">ITEM SHOP</h2><p>보유: <span id="shopCoinText">0</span>G</p><div id="shopGrid" class="shop-grid"></div><button class="btn" onclick="showScreen('lobbyScreen')" style="background:#333; color:white;">나가기</button></div></div>
     <div id="rankScreen" class="screen"><div class="card"><h2 style="color:var(--gold);">TOP 10</h2><table class="rank-table"><thead><tr><th>#</th><th>닉네임</th><th>LV</th></tr></thead><tbody id="rankList"></tbody></table><button class="btn" onclick="showScreen('lobbyScreen')" style="background:#333; color:white;">나가기</button></div></div>
 
     <div id="gameScreen" class="screen">
         
+        <div id="levelUpOverlay" class="level-overlay">
+            <div class="level-text">LEVEL CLEAR!</div>
+            <p style="color:white; margin-top:10px;">다음 단계로 이동합니다...</p>
+        </div>
+
         <div id="readyOverlay">
             <h2 id="readyTitle" style="color:var(--accent); margin-bottom:10px;">게임 준비</h2>
             <p id="readyMsg" style="color:#ccc; margin-bottom:20px; font-size:0.9rem;">...</p>
@@ -141,7 +198,7 @@
 
         <div id="oppArea" class="opp-section">
             <div style="display:flex; justify-content:space-between; font-size:0.7rem; margin-bottom:5px;">
-                <div id="p1Tag">P1(방장): <span id="p1Nick">-</span> <span id="p1Status" style="color:#666">[대기]</span></div>
+                <div id="p1Tag">P1: <span id="p1Nick">-</span> <span id="p1Status" style="color:#666">[대기]</span></div>
                 <div id="p2Tag">P2: <span id="p2Nick">-</span> <span id="p2Status" style="color:#666">[대기]</span></div>
             </div>
             <div style="display:flex; justify-content:space-around;">
@@ -151,12 +208,12 @@
         </div>
 
         <div style="width:100%; display:flex; justify-content:space-between; align-items:flex-start; padding:0 10px; margin-bottom:5px;">
-            <div style="display:flex; flex-direction:column; align-items:center;">
-                <div style="font-size:0.6rem; color:var(--accent); font-weight:bold; letter-spacing:1px; margin-bottom:4px;">TARGET</div>
+            <div style="display:flex; flex-direction:column; align-items:center; cursor:pointer;" onclick="openTutorial()">
+                <div style="font-size:0.6rem; color:var(--accent); font-weight:bold; letter-spacing:1px; margin-bottom:4px;">TARGET ❓</div>
                 <div id="targetBoard" class="target-box"></div>
             </div>
             <div style="text-align:right; margin-top:5px;">
-                <div id="lvText" style="color:var(--accent); font-size:0.9rem; font-weight:bold;">LV.-</div>
+                <div id="lvText" style="color:var(--accent); font-size:1.2rem; font-weight:bold;">LV.-</div>
                 <div id="gimmickText" style="font-size:0.7rem; color:var(--warn); margin-bottom:2px;">NORMAL</div>
                 <div id="timerText" style="font-size:1.8rem; font-weight:bold; font-variant-numeric: tabular-nums;">00:00</div>
             </div>
@@ -197,13 +254,11 @@
             { id: 'dice', name: '🍀 주사위', price: 400, desc: '랜덤 아이템 획득' }
         ];
 
-        // --- 인증 및 데이터 로딩 (안전장치 추가) ---
         auth.onAuthStateChanged(user => {
             if (user) {
                 currentUser = user;
                 db.ref(`users/${user.uid}`).on('value', snap => {
                     userData = snap.val();
-                    // 데이터가 없거나 깨졌을 경우 기본값 할당
                     if (!userData) {
                         userData = { nickname: "Player", coins: 1000, level: 1, items: {} };
                         db.ref(`users/${user.uid}`).set(userData);
@@ -230,7 +285,6 @@
         }
 
         function updateLobbyUI() {
-            // userData가 로드되기 전이라면 방어
             if(!userData) return;
             document.getElementById('displayNick').innerText = userData.nickname;
             document.getElementById('coinText').innerText = userData.coins;
@@ -281,22 +335,16 @@
             });
         }
 
-        // --- AI 로직 ---
+        function openTutorial() { document.getElementById('tutorialModal').style.display='flex'; }
+        function closeTutorial() { document.getElementById('tutorialModal').style.display='none'; }
+
+        // --- AI ---
         function initAI() {
             const lv = userData.level || 1;
             aiTimeMax = Math.max(20, 100 - (lv * 4)); 
             aiTimeCur = 0;
-            
             let p = []; COLORS.forEach(c => { for(let i=0; i<4; i++) p.push(c); }); p.push(COLORS[0]); p.sort(()=>Math.random()-0.5);
-            aiBoard = [];
-            for(let r=0; r<5; r++){
-                let row=[]; 
-                for(let c=0; c<5; c++){
-                    if(r===4&&c===4){ row.push('empty'); aiEmpty={r:4,c:4}; }
-                    else row.push(p.pop());
-                }
-                aiBoard.push(row); 
-            }
+            aiBoard = []; for(let r=0; r<5; r++){ let row=[]; for(let c=0; c<5; c++){ if(r===4&&c===4){ row.push('empty'); aiEmpty={r:4,c:4}; } else row.push(p.pop()); } aiBoard.push(row); }
             renderMini('aiBoard', aiBoard);
             document.getElementById('aiLevelText').innerText = lv;
             document.getElementById('aiStatusText').innerText = "준비";
@@ -307,9 +355,7 @@
             const lv = userData.level || 1;
             let baseSpeed = Math.max(200, 1500 - (lv * 60)); 
             document.getElementById('aiStatusText').innerText = "생각 중...";
-
             if (aiInterval) clearTimeout(aiInterval);
-
             function aiStep() {
                 if (!isRunning) return;
                 let neighbors = [];
@@ -328,12 +374,8 @@
                 let elapsed = (Date.now() - startTime) / 1000;
                 let pct = (elapsed / aiTimeMax) * 100;
                 document.getElementById('aiProgressBar').style.width = `${Math.min(100, pct)}%`;
-
                 if (elapsed >= aiTimeMax) {
-                    isRunning = false; 
-                    alert(`💀 AI가 먼저 끝냈습니다! 패배!`);
-                    quitGame();
-                    return;
+                    isRunning = false; alert(`💀 AI가 먼저 끝냈습니다! 패배!`); quitGame(); return;
                 }
                 let nextDelay = baseSpeed + (Math.random() * 200);
                 aiInterval = setTimeout(aiStep, nextDelay);
@@ -341,22 +383,24 @@
             aiStep();
         }
 
-        // --- 게임 시작 (준비 화면) ---
+        // --- 준비/시작 ---
         function startSolo() {
-            if(!userData) return alert("데이터 로딩중... 잠시만요");
+            if(!userData) return alert("데이터 로딩중...");
             myRole = 'solo';
             showScreen('gameScreen');
             document.getElementById('oppArea').style.display = 'none';
             document.getElementById('aiArea').style.display = 'block';
             
-            // 준비 오버레이 설정
             document.getElementById('readyOverlay').style.display = 'flex';
             document.getElementById('readyTitle').innerText = "AI 솔로 랭킹전";
             document.getElementById('readyMsg').innerText = `현재 레벨: ${userData.level}\nAI를 이기세요!`;
             document.getElementById('readyBtn').innerText = "게임 시작";
             document.getElementById('readyBtn').disabled = false;
 
-            const lv = userData.level || 1;
+            prepareGame(userData.level);
+        }
+
+        function prepareGame(lv) {
             let mode = "NORMAL";
             if (lv >= 6 && lv <= 10) mode = "🚫 BLIND";
             else if (lv >= 11 && lv <= 15) mode = "↔️ MIRROR";
@@ -365,71 +409,36 @@
             document.getElementById('gimmickText').innerText = mode;
             document.getElementById('lvText').innerText = `LV.${lv}`;
 
-            // 정답 및 보드 미리 세팅
             target = generateTarget();
             if(!target || target.length === 0) target = generateTarget();
             renderTarget();
             initBoard();
             initAI();
-            
             isRunning = false;
         }
 
-        // --- 버튼 핸들러 (멀티/솔로 분기) ---
         function handleReadyAction() {
             if (myRole === 'solo') {
                 document.getElementById('readyOverlay').style.display = 'none';
                 startGameLoop();
             } else if (myRole === 'p1') {
-                // 방장: 상대가 준비했는지 체크하고 시작
                 db.ref(`rooms/${roomID}`).once('value', snap => {
-                    if (snap.val() && snap.val().p2Ready) {
-                        db.ref(`rooms/${roomID}`).update({ status: 'playing' });
-                    } else {
-                        alert("상대방이 아직 준비하지 않았습니다.");
-                    }
+                    if (snap.val() && snap.val().p2Ready) db.ref(`rooms/${roomID}`).update({ status: 'playing' });
+                    else alert("상대방이 준비되지 않았습니다.");
                 });
             } else if (myRole === 'p2') {
-                // 참가자: 준비 완료 신호 보냄
                 db.ref(`rooms/${roomID}`).update({ p2Ready: true });
-                document.getElementById('readyBtn').innerText = "방장의 시작을 대기중...";
+                document.getElementById('readyBtn').innerText = "방장의 시작 대기중...";
                 document.getElementById('readyBtn').disabled = true;
             }
-        }
-
-        function generateTarget() {
-            let p = []; COLORS.forEach(c => { for(let i=0; i<4; i++) p.push(c); });
-            p.sort(() => Math.random() - 0.5);
-            let t = []; for(let i=0; i<3; i++) t.push(p.splice(0, 3));
-            return t;
-        }
-
-        function renderTarget() {
-            const el = document.getElementById('targetBoard');
-            el.innerHTML = '';
-            if (!target || target.length === 0) {
-                for(let i=0; i<9; i++) {
-                    const d = document.createElement('div'); d.className = 'target-tile empty'; 
-                    d.style.border='1px dashed #333'; el.appendChild(d);
-                }
-                return;
-            }
-            target.forEach((row, r) => {
-                row.forEach((col, c) => {
-                    const d = document.createElement('div');
-                    d.className = `target-tile ${col}`;
-                    if (activeItem === 'hammer' && r === 1 && c === 1) d.className = 'target-tile empty';
-                    el.appendChild(d);
-                });
-            });
         }
 
         function startGameLoop() {
             isRunning = true;
             startTime = Date.now();
-            document.getElementById('readyOverlay').style.display = 'none'; // 오버레이 제거
-            
-            renderTarget(); // 정답지 다시 그림 (안전장치)
+            document.getElementById('readyOverlay').style.display = 'none';
+            renderTarget(); 
+            document.getElementById('targetBoard').style.opacity = '1';
             
             if (myRole === 'solo') startAILoop(); 
             if (myRole !== 'solo') syncBoard();
@@ -442,67 +451,10 @@
                 const sec = Math.floor((Date.now() - startTime) / 1000);
                 document.getElementById('timerText').innerText = new Date(sec*1000).toISOString().substr(14,5);
                 
-                // 기믹
                 const lv = userData ? userData.level : 1;
-                if (myRole==='solo' && lv >= 6 && sec === 5) {
-                    document.getElementById('targetBoard').style.opacity = '0'; // BLIND
-                }
-                if (myRole==='solo' && lv >= 16 && sec > 0 && sec % 30 === 0) {
-                    document.getElementById('boardContainer').style.transform = `rotate(${sec * 3}deg)`; // CHAOS
-                }
+                if (myRole==='solo' && lv >= 6 && sec === 5) document.getElementById('targetBoard').style.opacity = '0';
+                if (myRole==='solo' && lv >= 16 && sec > 0 && sec % 30 === 0) document.getElementById('boardContainer').style.transform = `rotate(${sec * 3}deg)`;
             }, 1000);
-        }
-
-        function initBoard() {
-            let p = []; COLORS.forEach(c => { for(let i=0; i<4; i++) p.push(c); });
-            p.push(COLORS[0]); p.sort(() => Math.random() - 0.5);
-            board = [];
-            for(let r=0; r<5; r++) {
-                let row = [];
-                for(let c=0; c<5; c++) {
-                    if (r===4&&c===4) { row.push('empty'); empty={r:4, c:4}; }
-                    else row.push(p.pop());
-                }
-                board.push(row);
-            }
-            renderMain();
-        }
-
-        function renderMain() {
-            const el = document.getElementById('mainBoard');
-            el.innerHTML = '';
-            board.forEach((row, r) => {
-                row.forEach((col, c) => {
-                    const d = document.createElement('div');
-                    d.className = `tile ${col} ${selectedTile?.r===r && selectedTile?.c===c ? 'selected' : ''}`;
-                    d.onclick = () => handleTileClick(r, c);
-                    el.appendChild(d);
-                });
-            });
-        }
-
-        function handleTileClick(r, c) {
-            if (!isRunning) return;
-            
-            if (activeItem === 'swap') {
-                if (!selectedTile) { selectedTile = {r,c}; renderMain(); }
-                else {
-                    let t = board[r][c]; board[r][c] = board[selectedTile.r][selectedTile.c]; board[selectedTile.r][selectedTile.c] = t;
-                    if(board[r][c]==='empty') empty={r,c}; if(board[selectedTile.r][selectedTile.c]==='empty') empty={r:selectedTile.r, c:selectedTile.c};
-                    selectedTile=null; activeItem=null; renderMain(); if(myRole!=='solo') syncBoard(); checkWin();
-                }
-                return;
-            }
-
-            let tr = r, tc = c;
-            if (myRole === 'solo' && userData.level >= 11 && userData.level <= 15) tc = 4 - c;
-
-            if (Math.abs(tr - empty.r) + Math.abs(tc - empty.c) === 1) {
-                board[empty.r][empty.c] = board[tr][tc];
-                board[tr][tc] = 'empty';
-                empty = {r: tr, c: tc};
-                renderMain(); if(myRole !== 'solo') syncBoard(); checkWin();
-            }
         }
 
         function checkWin() {
@@ -515,141 +467,153 @@
             }
             if (m) {
                 if (myRole === 'solo') {
-                    isRunning = false; clearInterval(timerInterval); clearInterval(aiInterval);
+                    isRunning = false; clearInterval(timerInterval); if(aiInterval) clearTimeout(aiInterval);
                     const reward = 100 + (userData.level * 20);
-                    alert(`🎉 AI 승리! (+${reward}G) / 레벨업!`);
                     db.ref(`users/${currentUser.uid}`).update({ level: userData.level+1, coins: userData.coins+reward });
-                    quitGame();
+                    
+                    // ★ 연속 플레이 로직 (핵심)
+                    const overlay = document.getElementById('levelUpOverlay');
+                    overlay.style.display = 'flex';
+                    overlay.querySelector('.level-text').innerText = `LEVEL ${userData.level} CLEAR!`;
+                    
+                    setTimeout(() => {
+                        overlay.style.display = 'none';
+                        userData.level++; // 로컬 반영
+                        prepareGame(userData.level); // 다음 레벨 세팅
+                        startGameLoop(); // 즉시 시작
+                    }, 2000);
+
                 } else if (myRole !== 'watch') {
                     db.ref(`rooms/${roomID}`).update({ winner: userData.nickname });
                 }
             }
         }
 
-        // --- 방 로직 (멀티) ---
+        // --- 공통 로직 (타일 생성, 렌더링, 이동) ---
+        function generateTarget() {
+            let p = []; COLORS.forEach(c => { for(let i=0; i<4; i++) p.push(c); });
+            p.sort(() => Math.random() - 0.5);
+            let t = []; for(let i=0; i<3; i++) t.push(p.splice(0, 3));
+            return t;
+        }
+        function renderTarget() {
+            const el = document.getElementById('targetBoard');
+            el.innerHTML = '';
+            if (!target || target.length === 0) {
+                for(let i=0; i<9; i++) { const d = document.createElement('div'); d.className = 'target-tile empty'; d.style.border='1px dashed #333'; el.appendChild(d); } return;
+            }
+            target.forEach((row, r) => {
+                row.forEach((col, c) => {
+                    const d = document.createElement('div'); d.className = `target-tile ${col}`;
+                    if (activeItem === 'hammer' && r === 1 && c === 1) d.className = 'target-tile empty';
+                    el.appendChild(d);
+                });
+            });
+        }
+        function initBoard() {
+            let p = []; COLORS.forEach(c => { for(let i=0; i<4; i++) p.push(c); });
+            p.push(COLORS[0]); p.sort(() => Math.random() - 0.5);
+            board = [];
+            for(let r=0; r<5; r++) {
+                let row = []; for(let c=0; c<5; c++) { if (r===4&&c===4) { row.push('empty'); empty={r:4, c:4}; } else row.push(p.pop()); }
+                board.push(row);
+            }
+            renderMain();
+        }
+        function renderMain() {
+            const el = document.getElementById('mainBoard'); el.innerHTML = '';
+            board.forEach((row, r) => {
+                row.forEach((col, c) => {
+                    const d = document.createElement('div');
+                    d.className = `tile ${col} ${selectedTile?.r===r && selectedTile?.c===c ? 'selected' : ''}`;
+                    d.onclick = () => handleTileClick(r, c);
+                    el.appendChild(d);
+                });
+            });
+        }
+        function handleTileClick(r, c) {
+            if (!isRunning) return;
+            if (activeItem === 'swap') {
+                if (!selectedTile) { selectedTile = {r,c}; renderMain(); }
+                else {
+                    let t = board[r][c]; board[r][c] = board[selectedTile.r][selectedTile.c]; board[selectedTile.r][selectedTile.c] = t;
+                    if(board[r][c]==='empty') empty={r,c}; if(board[selectedTile.r][selectedTile.c]==='empty') empty={r:selectedTile.r, c:selectedTile.c};
+                    selectedTile=null; activeItem=null; renderMain(); if(myRole!=='solo') syncBoard(); checkWin();
+                }
+                return;
+            }
+            let tr = r, tc = c;
+            if (myRole === 'solo' && userData.level >= 11 && userData.level <= 15) tc = 4 - c;
+            if (Math.abs(tr - empty.r) + Math.abs(tc - empty.c) === 1) {
+                board[empty.r][empty.c] = board[tr][tc]; board[tr][tc] = 'empty'; empty = {r: tr, c: tc};
+                renderMain(); if(myRole !== 'solo') syncBoard(); checkWin();
+            }
+        }
+        function useItem(id) {
+            if (!isRunning) return;
+            if (id === 'hammer') { activeItem='hammer'; renderTarget(); }
+            else if (id === 'swap') { activeItem='swap'; alert("두 타일 클릭"); }
+            else if (id === 'scan') { document.getElementById('targetBoard').style.opacity='1'; setTimeout(()=> { if(userData.level>=6) document.getElementById('targetBoard').style.opacity='0'; }, 5000); }
+            else if (id === 'dice') { const g = ITEMS[Math.floor(Math.random()*ITEMS.length)].id; db.ref(`users/${currentUser.uid}/items/${g}`).set((userData.items[g]||0)+1); alert(`${g} 획득`); }
+            db.ref(`users/${currentUser.uid}/items/${id}`).set(userData.items[id]-1);
+        }
+
+        // --- 방 로직 ---
         function joinRoom(mode) {
             roomID = document.getElementById('roomInput').value;
             if (!roomID) return alert("방 번호 입력");
             const rRef = db.ref(`rooms/${roomID}`);
-            
             rRef.once('value', snap => {
                 const d = snap.val();
                 if (mode === 'battle') {
-                    if (!d) {
-                        myRole = 'p1';
-                        rRef.set({ p1: currentUser.uid, p1Name: userData.nickname, p1Ready: false, status: 'waiting', target: generateTarget() });
-                        rRef.onDisconnect().remove();
-                    } else if (!d.p2) {
-                        myRole = 'p2';
-                        rRef.update({ p2: currentUser.uid, p2Name: userData.nickname, p2Ready: false });
-                    } else return alert("방이 꽉 찼습니다");
-                } else {
-                    if (!d) return alert("방 없음");
-                    myRole = 'watch';
-                }
+                    if (!d) { myRole = 'p1'; rRef.set({ p1: currentUser.uid, p1Name: userData.nickname, p1Ready: false, status: 'waiting', target: generateTarget() }); rRef.onDisconnect().remove(); }
+                    else if (!d.p2) { myRole = 'p2'; rRef.update({ p2: currentUser.uid, p2Name: userData.nickname, p2Ready: false }); } 
+                    else return alert("방 꽉참");
+                } else { if (!d) return alert("방 없음"); myRole = 'watch'; }
                 initBattleUI();
             });
         }
-
         function initBattleUI() {
             showScreen('gameScreen');
             document.getElementById('oppArea').style.display = 'block';
             document.getElementById('aiArea').style.display = 'none';
             document.getElementById('lvText').innerText = "BATTLE";
-            document.getElementById('gimmickText').innerText = "PVP";
             
-            // 멀티용 오버레이 설정
             document.getElementById('readyOverlay').style.display = 'flex';
             document.getElementById('readyTitle').innerText = (myRole === 'watch') ? "관전 중" : "멀티 대결";
             document.getElementById('readyMsg').innerText = "상대방을 기다리는 중...";
             
-            if (myRole === 'p1') {
-                document.getElementById('readyBtn').innerText = "상대 준비 대기중 (비활성)";
-                document.getElementById('readyBtn').disabled = true; 
-            } else if (myRole === 'p2') {
-                document.getElementById('readyBtn').innerText = "준비 완료 (클릭)";
-                document.getElementById('readyBtn').disabled = false;
-            } else {
-                document.getElementById('readyOverlay').style.display = 'none'; // 관전자는 바로 봄
-            }
+            if (myRole === 'p1') { document.getElementById('readyBtn').innerText = "상대 준비 대기중 (비활성)"; document.getElementById('readyBtn').disabled = true; } 
+            else if (myRole === 'p2') { document.getElementById('readyBtn').innerText = "준비 완료 (클릭)"; document.getElementById('readyBtn').disabled = false; } 
+            else document.getElementById('readyOverlay').style.display = 'none';
 
             db.ref(`rooms/${roomID}`).on('value', snap => {
                 const d = snap.val();
                 if (!d) return quitGame();
-
                 if (d.target) { target = d.target; renderTarget(); document.getElementById('targetBoard').style.opacity = '1'; }
-
-                document.getElementById('p1Nick').innerText = d.p1Name || '-';
-                document.getElementById('p2Nick').innerText = d.p2Name || '-';
-                document.getElementById('p1Status').innerText = d.p1Ready ? (d.status==='playing'?'[진행중]':'[준비됨]') : '[대기]';
-                document.getElementById('p2Status').innerText = d.p2Ready ? (d.status==='playing'?'[진행중]':'[준비됨]') : '[대기]';
-                
-                if(d.board_p1) renderMini('p1Board', d.board_p1);
-                if(d.board_p2) renderMini('p2Board', d.board_p2);
-
-                // 방장 버튼 상태 업데이트 (P2가 준비했으면 활성화)
+                document.getElementById('p1Nick').innerText = d.p1Name || '-'; document.getElementById('p2Nick').innerText = d.p2Name || '-';
+                document.getElementById('p1Status').innerText = d.p1Ready ? (d.status==='playing'?'[게임중]':'[준비됨]') : '[대기]';
+                document.getElementById('p2Status').innerText = d.p2Ready ? (d.status==='playing'?'[게임중]':'[준비됨]') : '[대기]';
+                if(d.board_p1) renderMini('p1Board', d.board_p1); if(d.board_p2) renderMini('p2Board', d.board_p2);
                 if (myRole === 'p1') {
-                    if (d.p2Ready) {
-                        document.getElementById('readyBtn').innerText = "게임 시작 (클릭)";
-                        document.getElementById('readyBtn').disabled = false;
-                        document.getElementById('readyMsg').innerText = "상대가 준비되었습니다!";
-                    } else {
-                        document.getElementById('readyBtn').innerText = "상대 준비 대기중...";
-                        document.getElementById('readyBtn').disabled = true;
-                    }
+                    if (d.p2Ready) { document.getElementById('readyBtn').innerText = "게임 시작 (클릭)"; document.getElementById('readyBtn').disabled = false; document.getElementById('readyMsg').innerText = "상대가 준비되었습니다!"; } 
+                    else { document.getElementById('readyBtn').innerText = "상대 준비 대기중..."; document.getElementById('readyBtn').disabled = true; }
                 }
-
                 if (d.status === 'playing' && !isRunning && myRole !== 'watch') startGameLoop();
-
                 if (d.winner) {
                     isRunning = false; clearInterval(timerInterval);
-                    alert(d.winner === userData.nickname ? "🏆 승리! (+500G)" : "패배...");
+                    alert(d.winner === userData.nickname ? "🏆 승리!" : "패배...");
                     if(d.winner === userData.nickname) db.ref(`users/${currentUser.uid}/coins`).set(userData.coins+500);
                     quitGame();
                 }
             });
         }
-
-        function renderMini(id, data) {
-            const el = document.getElementById(id); el.innerHTML = '';
-            if(!data) return;
-            data.forEach(row => row.forEach(col => {
-                const d = document.createElement('div'); d.className = `mini-tile ${col}`; el.appendChild(d);
-            }));
-        }
-
-        function syncBoard() {
-            if (myRole === 'p1') db.ref(`rooms/${roomID}/board_p1`).set(board);
-            if (myRole === 'p2') db.ref(`rooms/${roomID}/board_p2`).set(board);
-        }
-
-        function useItem(id) {
-            if (!isRunning) return;
-            if (id === 'hammer') { activeItem='hammer'; renderTarget(); }
-            else if (id === 'swap') { activeItem='swap'; alert("두 타일 클릭"); }
-            else if (id === 'scan') { 
-                document.getElementById('targetBoard').style.opacity='1'; 
-                setTimeout(()=> { 
-                    if(myRole==='solo' && userData.level>=6) document.getElementById('targetBoard').style.opacity='0'; 
-                }, 5000); 
-            }
-            else if (id === 'dice') { 
-                const gain = ITEMS[Math.floor(Math.random()*ITEMS.length)].id;
-                db.ref(`users/${currentUser.uid}/items/${gain}`).set((userData.items[gain]||0)+1);
-                alert(`${gain} 획득`);
-            }
-            db.ref(`users/${currentUser.uid}/items/${id}`).set(userData.items[id]-1);
-        }
-
+        function renderMini(id, data) { const el = document.getElementById(id); el.innerHTML = ''; if(!data)return; data.forEach(row => row.forEach(col => { const d = document.createElement('div'); d.className = `mini-tile ${col}`; el.appendChild(d); })); }
+        function syncBoard() { if (myRole === 'p1') db.ref(`rooms/${roomID}/board_p1`).set(board); if (myRole === 'p2') db.ref(`rooms/${roomID}/board_p2`).set(board); }
         function quitGame() {
             isRunning = false; clearInterval(timerInterval); if(aiInterval) clearTimeout(aiInterval);
-            if (roomID) {
-                if (myRole==='p1') db.ref(`rooms/${roomID}`).remove();
-                db.ref(`rooms/${roomID}`).off();
-                roomID = "";
-            }
-            showScreen('lobbyScreen');
-            document.getElementById('targetBoard').style.opacity = '1';
+            if (roomID) { if (myRole==='p1') db.ref(`rooms/${roomID}`).remove(); db.ref(`rooms/${roomID}`).off(); roomID = ""; }
+            showScreen('lobbyScreen'); document.getElementById('targetBoard').style.opacity = '1'; document.getElementById('levelUpOverlay').style.display = 'none';
         }
     </script>
 </body>

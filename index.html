@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RUBIK'S RACE - INFINITE</title>
+    <title>RUBIK'S RACE - FIXED FINAL</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
@@ -28,7 +28,8 @@
         
         .card { background: var(--panel); padding: 20px; border-radius: 20px; width: 100%; border: 1px solid #222; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 95%; box-sizing: border-box; z-index: 5; }
         .btn { width: 100%; padding: 14px; background: var(--accent); color: #000; font-weight: bold; border: none; border-radius: 12px; cursor: pointer; margin-top: 8px; font-size: 1rem; }
-        .btn:disabled { background: #444; color: #888; cursor: not-allowed; }
+        /* 버튼 비활성화 스타일 확실하게 적용 */
+        .btn:disabled { background: #333 !important; color: #777 !important; cursor: not-allowed; border: 1px solid #444; }
         .btn-sub { background: #222; border: 1px solid #444; color: #ccc; font-size: 0.8rem; padding: 8px 12px; border-radius: 8px; cursor: pointer; }
 
         input { width: 100%; padding: 14px; background: #111; color: white; border: 1px solid #333; border-radius: 10px; margin-bottom: 10px; box-sizing: border-box; font-size: 1rem; }
@@ -63,28 +64,13 @@
         .inventory { display: flex; gap: 8px; overflow-x: auto; width: 100%; padding: 5px 0; margin-bottom: 5px; }
         .inv-slot { flex: 0 0 auto; background: #1a1a1a; border: 1px solid #333; padding: 6px 12px; border-radius: 8px; font-size: 0.75rem; cursor: pointer; color:#ccc; }
         
-        /* 레벨업 오버레이 */
-        .level-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); z-index: 200;
-            display: none; flex-direction: column; justify-content: center; align-items: center;
-            backdrop-filter: blur(5px);
-        }
+        /* 오버레이 */
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 200; display: none; flex-direction: column; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
         .level-text { font-size: 3rem; color: var(--gold); font-weight: bold; animation: pop 0.5s; text-shadow: 0 0 20px var(--gold); }
         @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 
-        /* 준비 오버레이 */
-        #readyOverlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); z-index: 100;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-        }
-
-        /* 튜토리얼 모달 */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 999; justify-content: center; align-items: center; }
-        .tut-content { background: #1a1a1a; padding: 20px; border-radius: 15px; border: 1px solid var(--accent); max-width: 320px; text-align: center; }
-        .tut-demo { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 20px 0; }
-        .tut-box { border: 2px solid #555; padding: 5px; border-radius: 5px; }
+        /* 준비 오버레이 (멀티/솔로 공통) */
+        #readyOverlay { display: flex; background: rgba(0,0,0,0.95); z-index: 999; }
 
         .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-height: 50vh; overflow-y: auto; width: 100%; }
         .rank-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; color: #ccc; margin-top: 10px; }
@@ -111,11 +97,10 @@
         <div class="card">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
                 <div style="text-align:left;">
-                    <div id="displayNick" style="font-weight:bold; font-size:1.1rem;">User</div>
+                    <div id="displayNick" style="font-weight:bold; font-size:1.1rem;">Loading...</div>
                     <div style="color:var(--gold); font-size:0.9rem;">💰 <span id="coinText">0</span></div>
                 </div>
                 <div style="display:flex; gap:5px;">
-                    <button class="btn-sub" onclick="openTutorial()">❓ 설명</button>
                     <button class="btn-sub" onclick="renderShop(); showScreen('shopScreen');">🛒 상점</button>
                     <button class="btn-sub" onclick="loadRankings()">🏆 랭킹</button>
                 </div>
@@ -133,52 +118,17 @@
         </div>
     </div>
 
-    <div id="tutorialModal" class="modal">
-        <div class="tut-content">
-            <h2 style="color:var(--accent); margin-top:0;">게임 방법</h2>
-            <p style="color:#ccc; font-size:0.9rem;">
-                5x5 보드의 타일을 슬라이드해서<br>
-                <strong style="color:var(--gold)">가운데 3x3 영역</strong>을<br>
-                <strong>정답지(Target)</strong>와 똑같이 만드세요!
-            </p>
-            <div class="tut-demo">
-                <div>
-                    <div style="font-size:0.7rem; margin-bottom:5px;">정답지</div>
-                    <div class="tut-box" style="width:50px; height:50px; display:grid; grid-template-columns:repeat(3,1fr); gap:2px;">
-                        <div class="red"></div><div class="blue"></div><div class="green"></div>
-                        <div class="yellow"></div><div class="orange"></div><div class="white"></div>
-                        <div class="red"></div><div class="blue"></div><div class="green"></div>
-                    </div>
-                </div>
-                <div style="font-size:1.5rem; color:var(--accent);">➡</div>
-                <div>
-                    <div style="font-size:0.7rem; margin-bottom:5px;">내 보드 (중앙)</div>
-                    <div class="tut-box" style="width:60px; height:60px; position:relative; background:#000;">
-                        <div style="position:absolute; top:5px; left:5px; width:46px; height:46px; border:2px solid var(--accent); z-index:2;"></div>
-                        <div style="position:absolute; top:7px; left:7px; width:42px; height:42px; display:grid; grid-template-columns:repeat(3,1fr); gap:2px;">
-                            <div class="red"></div><div class="blue"></div><div class="green"></div>
-                            <div class="yellow"></div><div class="orange"></div><div class="white"></div>
-                            <div class="red"></div><div class="blue"></div><div class="green"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <p style="font-size:0.8rem; color:#888;">바깥쪽 테두리는 맞추는 공간이 아닙니다.<br>오직 가운데만 신경쓰세요!</p>
-            <button class="btn" onclick="closeTutorial()">알겠습니다!</button>
-        </div>
-    </div>
-
     <div id="shopScreen" class="screen"><div class="card"><h2 style="color:var(--gold);">ITEM SHOP</h2><p>보유: <span id="shopCoinText">0</span>G</p><div id="shopGrid" class="shop-grid"></div><button class="btn" onclick="showScreen('lobbyScreen')" style="background:#333; color:white;">나가기</button></div></div>
     <div id="rankScreen" class="screen"><div class="card"><h2 style="color:var(--gold);">TOP 10</h2><table class="rank-table"><thead><tr><th>#</th><th>닉네임</th><th>LV</th></tr></thead><tbody id="rankList"></tbody></table><button class="btn" onclick="showScreen('lobbyScreen')" style="background:#333; color:white;">나가기</button></div></div>
 
     <div id="gameScreen" class="screen">
         
-        <div id="levelUpOverlay" class="level-overlay">
+        <div id="levelUpOverlay" class="overlay">
             <div class="level-text">LEVEL CLEAR!</div>
             <p style="color:white; margin-top:10px;">다음 단계로 이동합니다...</p>
         </div>
 
-        <div id="readyOverlay">
+        <div id="readyOverlay" class="overlay">
             <h2 id="readyTitle" style="color:var(--accent); margin-bottom:10px;">게임 준비</h2>
             <p id="readyMsg" style="color:#ccc; margin-bottom:20px; font-size:0.9rem;">...</p>
             <button id="readyBtn" class="btn" onclick="handleReadyAction()" style="width:200px;">준비 / 시작</button>
@@ -208,12 +158,12 @@
         </div>
 
         <div style="width:100%; display:flex; justify-content:space-between; align-items:flex-start; padding:0 10px; margin-bottom:5px;">
-            <div style="display:flex; flex-direction:column; align-items:center; cursor:pointer;" onclick="openTutorial()">
-                <div style="font-size:0.6rem; color:var(--accent); font-weight:bold; letter-spacing:1px; margin-bottom:4px;">TARGET ❓</div>
+            <div style="display:flex; flex-direction:column; align-items:center;">
+                <div style="font-size:0.6rem; color:var(--accent); font-weight:bold; letter-spacing:1px; margin-bottom:4px;">TARGET</div>
                 <div id="targetBoard" class="target-box"></div>
             </div>
             <div style="text-align:right; margin-top:5px;">
-                <div id="lvText" style="color:var(--accent); font-size:1.2rem; font-weight:bold;">LV.-</div>
+                <div id="lvText" style="color:var(--accent); font-size:1.2rem; font-weight:bold;">LV.1</div>
                 <div id="gimmickText" style="font-size:0.7rem; color:var(--warn); margin-bottom:2px;">NORMAL</div>
                 <div id="timerText" style="font-size:1.8rem; font-weight:bold; font-variant-numeric: tabular-nums;">00:00</div>
             </div>
@@ -259,7 +209,8 @@
                 currentUser = user;
                 db.ref(`users/${user.uid}`).on('value', snap => {
                     userData = snap.val();
-                    if (!userData) {
+                    // 데이터가 없거나(undefined) 깨졌을 때 기본값 강제 할당
+                    if (!userData || !userData.level) {
                         userData = { nickname: "Player", coins: 1000, level: 1, items: {} };
                         db.ref(`users/${user.uid}`).set(userData);
                     }
@@ -289,7 +240,7 @@
             document.getElementById('displayNick').innerText = userData.nickname;
             document.getElementById('coinText').innerText = userData.coins;
             document.getElementById('shopCoinText').innerText = userData.coins;
-            document.getElementById('soloBtn').innerText = `🤖 AI 솔로 랭킹전 (LV ${userData.level})`;
+            document.getElementById('soloBtn').innerText = `🤖 AI 솔로 랭킹전 (LV ${userData.level || 1})`;
             renderShop(); renderInventory();
         }
 
@@ -334,9 +285,6 @@
                 `).join('');
             });
         }
-
-        function openTutorial() { document.getElementById('tutorialModal').style.display='flex'; }
-        function closeTutorial() { document.getElementById('tutorialModal').style.display='none'; }
 
         // --- AI ---
         function initAI() {
@@ -385,7 +333,11 @@
 
         // --- 준비/시작 ---
         function startSolo() {
-            if(!userData) return alert("데이터 로딩중...");
+            // userData 체크 (LV.undefined 방지)
+            if(!userData || !userData.level) {
+                alert("데이터 로딩중... 다시 시도해주세요.");
+                return;
+            }
             myRole = 'solo';
             showScreen('gameScreen');
             document.getElementById('oppArea').style.display = 'none';
@@ -410,7 +362,9 @@
             document.getElementById('lvText').innerText = `LV.${lv}`;
 
             target = generateTarget();
+            // 정답지가 비어있으면 재생성 보장
             if(!target || target.length === 0) target = generateTarget();
+            
             renderTarget();
             initBoard();
             initAI();
@@ -422,14 +376,17 @@
                 document.getElementById('readyOverlay').style.display = 'none';
                 startGameLoop();
             } else if (myRole === 'p1') {
+                // 방장: 상대가 준비완료 상태여야 시작 가능
                 db.ref(`rooms/${roomID}`).once('value', snap => {
-                    if (snap.val() && snap.val().p2Ready) db.ref(`rooms/${roomID}`).update({ status: 'playing' });
-                    else alert("상대방이 준비되지 않았습니다.");
+                    const d = snap.val();
+                    if (d && d.p2Ready) db.ref(`rooms/${roomID}`).update({ status: 'playing' });
+                    else alert("상대방이 아직 준비하지 않았습니다.");
                 });
             } else if (myRole === 'p2') {
+                // 참가자: 준비 버튼 누르면 -> p2Ready = true
                 db.ref(`rooms/${roomID}`).update({ p2Ready: true });
                 document.getElementById('readyBtn').innerText = "방장의 시작 대기중...";
-                document.getElementById('readyBtn').disabled = true;
+                document.getElementById('readyBtn').disabled = true; // 버튼 비활성화
             }
         }
 
@@ -437,7 +394,7 @@
             isRunning = true;
             startTime = Date.now();
             document.getElementById('readyOverlay').style.display = 'none';
-            renderTarget(); 
+            renderTarget(); // 정답지 확실하게 표시
             document.getElementById('targetBoard').style.opacity = '1';
             
             if (myRole === 'solo') startAILoop(); 
@@ -459,9 +416,12 @@
 
         function checkWin() {
             let m = true;
+            // 2행 2열 ~ 4행 4열 (인덱스 기준 1,1 ~ 3,3) 확인
+            // 화면상 중앙 3x3 박스 영역입니다.
             for(let r=0; r<3; r++) {
                 for(let c=0; c<3; c++) {
                     if (activeItem==='hammer' && r===1 && c===1) continue;
+                    // board의 1~3행/열과 target의 0~2행/열 비교
                     if (board[r+1][c+1] !== target[r][c]) { m = false; break; }
                 }
             }
@@ -471,16 +431,16 @@
                     const reward = 100 + (userData.level * 20);
                     db.ref(`users/${currentUser.uid}`).update({ level: userData.level+1, coins: userData.coins+reward });
                     
-                    // ★ 연속 플레이 로직 (핵심)
+                    // 연속 레벨업 UI
                     const overlay = document.getElementById('levelUpOverlay');
                     overlay.style.display = 'flex';
                     overlay.querySelector('.level-text').innerText = `LEVEL ${userData.level} CLEAR!`;
                     
                     setTimeout(() => {
                         overlay.style.display = 'none';
-                        userData.level++; // 로컬 반영
-                        prepareGame(userData.level); // 다음 레벨 세팅
-                        startGameLoop(); // 즉시 시작
+                        userData.level++; // 클라이언트 측 선반영
+                        prepareGame(userData.level);
+                        startGameLoop(); 
                     }, 2000);
 
                 } else if (myRole !== 'watch') {
@@ -489,7 +449,7 @@
             }
         }
 
-        // --- 공통 로직 (타일 생성, 렌더링, 이동) ---
+        // --- 공통 로직 ---
         function generateTarget() {
             let p = []; COLORS.forEach(c => { for(let i=0; i<4; i++) p.push(c); });
             p.sort(() => Math.random() - 0.5);
@@ -500,6 +460,7 @@
             const el = document.getElementById('targetBoard');
             el.innerHTML = '';
             if (!target || target.length === 0) {
+                // 비상용 빈칸
                 for(let i=0; i<9; i++) { const d = document.createElement('div'); d.className = 'target-tile empty'; d.style.border='1px dashed #333'; el.appendChild(d); } return;
             }
             target.forEach((row, r) => {
@@ -563,13 +524,24 @@
             roomID = document.getElementById('roomInput').value;
             if (!roomID) return alert("방 번호 입력");
             const rRef = db.ref(`rooms/${roomID}`);
+            
             rRef.once('value', snap => {
                 const d = snap.val();
                 if (mode === 'battle') {
-                    if (!d) { myRole = 'p1'; rRef.set({ p1: currentUser.uid, p1Name: userData.nickname, p1Ready: false, status: 'waiting', target: generateTarget() }); rRef.onDisconnect().remove(); }
-                    else if (!d.p2) { myRole = 'p2'; rRef.update({ p2: currentUser.uid, p2Name: userData.nickname, p2Ready: false }); } 
-                    else return alert("방 꽉참");
-                } else { if (!d) return alert("방 없음"); myRole = 'watch'; }
+                    if (!d) {
+                        myRole = 'p1';
+                        // 방장 생성 시 초기화
+                        rRef.set({ p1: currentUser.uid, p1Name: userData.nickname, p1Ready: false, status: 'waiting', target: generateTarget() });
+                        rRef.onDisconnect().remove();
+                    } else if (!d.p2) {
+                        myRole = 'p2';
+                        // 참가자 입장 시 초기화
+                        rRef.update({ p2: currentUser.uid, p2Name: userData.nickname, p2Ready: false });
+                    } else return alert("방이 꽉 찼습니다");
+                } else {
+                    if (!d) return alert("방 없음");
+                    myRole = 'watch';
+                }
                 initBattleUI();
             });
         }
@@ -581,24 +553,31 @@
             
             document.getElementById('readyOverlay').style.display = 'flex';
             document.getElementById('readyTitle').innerText = (myRole === 'watch') ? "관전 중" : "멀티 대결";
-            document.getElementById('readyMsg').innerText = "상대방을 기다리는 중...";
+            document.getElementById('readyMsg').innerText = "대기 중...";
             
-            if (myRole === 'p1') { document.getElementById('readyBtn').innerText = "상대 준비 대기중 (비활성)"; document.getElementById('readyBtn').disabled = true; } 
-            else if (myRole === 'p2') { document.getElementById('readyBtn').innerText = "준비 완료 (클릭)"; document.getElementById('readyBtn').disabled = false; } 
+            // 버튼 상태 초기화
+            const btn = document.getElementById('readyBtn');
+            if (myRole === 'p1') { btn.innerText = "상대 준비 대기중 (비활성)"; btn.disabled = true; } 
+            else if (myRole === 'p2') { btn.innerText = "준비 (클릭)"; btn.disabled = false; } 
             else document.getElementById('readyOverlay').style.display = 'none';
 
             db.ref(`rooms/${roomID}`).on('value', snap => {
                 const d = snap.val();
                 if (!d) return quitGame();
                 if (d.target) { target = d.target; renderTarget(); document.getElementById('targetBoard').style.opacity = '1'; }
+                
                 document.getElementById('p1Nick').innerText = d.p1Name || '-'; document.getElementById('p2Nick').innerText = d.p2Name || '-';
                 document.getElementById('p1Status').innerText = d.p1Ready ? (d.status==='playing'?'[게임중]':'[준비됨]') : '[대기]';
                 document.getElementById('p2Status').innerText = d.p2Ready ? (d.status==='playing'?'[게임중]':'[준비됨]') : '[대기]';
+                
                 if(d.board_p1) renderMini('p1Board', d.board_p1); if(d.board_p2) renderMini('p2Board', d.board_p2);
+                
+                // 방장 버튼 로직: P2가 준비하면 활성화
                 if (myRole === 'p1') {
-                    if (d.p2Ready) { document.getElementById('readyBtn').innerText = "게임 시작 (클릭)"; document.getElementById('readyBtn').disabled = false; document.getElementById('readyMsg').innerText = "상대가 준비되었습니다!"; } 
-                    else { document.getElementById('readyBtn').innerText = "상대 준비 대기중..."; document.getElementById('readyBtn').disabled = true; }
+                    if (d.p2Ready) { btn.innerText = "게임 시작 (클릭)"; btn.disabled = false; document.getElementById('readyMsg').innerText = "상대가 준비되었습니다!"; } 
+                    else { btn.innerText = "상대 준비 대기중..."; btn.disabled = true; }
                 }
+
                 if (d.status === 'playing' && !isRunning && myRole !== 'watch') startGameLoop();
                 if (d.winner) {
                     isRunning = false; clearInterval(timerInterval);

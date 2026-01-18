@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RUBIK'S RACE - REAL AI MOTION</title>
+    <title>RUBIK'S RACE - LEVEL UP</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
@@ -46,7 +46,7 @@
             box-shadow: 0 0 15px rgba(0, 251, 255, 0.15);
         }
 
-        .target-box { display: grid; grid-template-columns: repeat(3, var(--target-tile)); gap: 3px; background: #111; padding: 5px; border-radius: 8px; border: 2px solid #444; }
+        .target-box { display: grid; grid-template-columns: repeat(3, var(--target-tile)); gap: 3px; background: #111; padding: 5px; border-radius: 8px; border: 2px solid #444; min-height: 80px; min-width: 80px; transition: opacity 0.5s; }
         .target-tile { width: var(--target-tile); height: var(--target-tile); border-radius: 2px; }
         
         /* AI & 상대방 영역 */
@@ -180,6 +180,7 @@
         
         // AI 관련 변수
         let aiBoard = [], aiEmpty = {r:4, c:4}, aiInterval = null, aiTimeMax = 0, aiTimeCur = 0;
+        let aiMoveSpeed = 1000; // AI 타일 움직이는 속도 (ms)
 
         const COLORS = ['red', 'blue', 'green', 'yellow', 'orange', 'white'];
         const ITEMS = [
@@ -266,13 +267,18 @@
             });
         }
 
-        // --- AI 시스템 (핵심: 리얼타임 무빙) ---
+        // --- AI 시스템 (난이도 적용) ---
         function initAI() {
             const lv = userData.level;
-            // Lv 1: 90초, Lv 10: 45초, Lv 20: 30초 (난이도)
-            aiTimeMax = Math.max(30, 95 - (lv * 5)); 
+            // 1. AI 제한 시간 (난이도)
+            // LV 1: 95초 -> LV 10: 50초 -> LV 20: 20초 (매우 빠름)
+            aiTimeMax = Math.max(20, 100 - (lv * 4)); 
             aiTimeCur = 0;
             
+            // 2. AI 움직임 속도 (시각 효과)
+            // LV 1: 1.5초마다 이동 -> LV 20: 0.2초마다 이동
+            aiMoveSpeed = Math.max(200, 1500 - (lv * 60));
+
             // AI 보드 초기화
             let p = []; COLORS.forEach(c => { for(let i=0; i<4; i++) p.push(c); }); p.push(COLORS[0]); p.sort(()=>Math.random()-0.5);
             aiBoard = [];
@@ -287,19 +293,19 @@
             
             renderMini('aiBoard', aiBoard);
             document.getElementById('aiLevelText').innerText = lv;
-            document.getElementById('aiStatusText').innerText = "대기 중";
+            document.getElementById('aiStatusText').innerText = `속도: ${(aiMoveSpeed/1000).toFixed(1)}s`;
             document.getElementById('aiProgressBar').style.width = '0%';
         }
 
         function startAILoop() {
-            document.getElementById('aiStatusText').innerText = "생각 중...";
             if (aiInterval) clearInterval(aiInterval);
             
-            // AI가 0.3초마다 실제로 움직이는 것처럼 시뮬레이션
+            // AI 실제 움직임 시뮬레이션
             aiInterval = setInterval(() => {
                 if (!isRunning) return;
                 
-                aiTimeCur += 0.3; // 시간 증가
+                // 시간 흐름 (게이지용) - 움직임 속도에 비례해서 시간 추가
+                aiTimeCur += (aiMoveSpeed / 1000); 
                 
                 // 1. AI 빈칸 주변 타일 찾기
                 let neighbors = [];
@@ -310,29 +316,29 @@
                     if(nr>=0 && nr<5 && nc>=0 && nc<5) neighbors.push({r:nr, c:nc});
                 }
                 
-                // 2. 랜덤한 이웃 타일 하나를 빈칸으로 이동 (AI가 맞추는 척)
+                // 2. 랜덤 이동 (AI가 맞추는 척)
                 if(neighbors.length > 0) {
                     const pick = neighbors[Math.floor(Math.random() * neighbors.length)];
                     aiBoard[aiEmpty.r][aiEmpty.c] = aiBoard[pick.r][pick.c];
                     aiBoard[pick.r][pick.c] = 'empty';
                     aiEmpty = pick;
-                    renderMini('aiBoard', aiBoard); // 화면 갱신
+                    renderMini('aiBoard', aiBoard); 
                 }
 
                 // 3. 진행바 업데이트
                 const pct = (aiTimeCur / aiTimeMax) * 100;
-                document.getElementById('aiProgressBar').style.width = `${pct}%`;
+                document.getElementById('aiProgressBar').style.width = `${Math.min(100, pct)}%`;
                 
-                // 4. AI 패배 조건 (시간 초과 = AI가 다 품)
+                // 4. AI 승리 판정
                 if (aiTimeCur >= aiTimeMax) {
                     isRunning = false; clearInterval(timerInterval); clearInterval(aiInterval);
-                    alert(`💀 AI가 먼저 맞췄습니다! 패배!\n(AI 기록: ${aiTimeMax.toFixed(1)}초)`);
+                    alert(`💀 GAME OVER! AI가 먼저 끝냈습니다.\n(AI 기록: ${aiTimeMax}초)`);
                     quitGame();
                 }
-            }, 300); // 0.3초마다 이동
+            }, aiMoveSpeed); // 레벨별 속도 적용
         }
 
-        // --- 게임 시작 ---
+        // --- 게임 시작 & 기믹 ---
         function startSolo() {
             myRole = 'solo';
             showScreen('gameScreen');
@@ -342,18 +348,20 @@
             document.getElementById('mainBtn').disabled = false;
             document.getElementById('mainBtn').style.display = 'block';
             
-            // 난이도 텍스트
+            // 레벨별 난이도 기믹 텍스트
             const lv = userData.level;
             let mode = "NORMAL";
-            if (lv >= 6 && lv <= 10) mode = "BLIND (암기)";
-            else if (lv >= 11 && lv <= 15) mode = "MIRROR (좌우반전)";
-            else if (lv >= 16) mode = "CHAOS (혼돈)";
+            if (lv >= 6 && lv <= 10) mode = "🚫 BLIND (암기)";
+            else if (lv >= 11 && lv <= 15) mode = "↔️ MIRROR (반전)";
+            else if (lv >= 16) mode = "🌀 CHAOS (혼돈)";
+            
             document.getElementById('gimmickText').innerText = mode;
+            document.getElementById('gimmickText').style.color = (lv>=6) ? "var(--warn)" : "#ccc";
             document.getElementById('lvText').innerText = `LV.${lv}`;
 
             target = generateTarget();
             renderTarget();
-            initAI();
+            initAI(); // AI 세팅 (레벨 반영)
             
             board = []; document.getElementById('mainBoard').innerHTML = '';
             isRunning = false;
@@ -369,9 +377,9 @@
         function renderTarget() {
             const el = document.getElementById('targetBoard');
             el.innerHTML = '';
-            if (!target || target.length === 0) {
-                for(let i=0; i<9; i++) { const d=document.createElement('div'); d.className='target-tile empty'; d.style.border='1px dashed #333'; el.appendChild(d); } return;
-            }
+            // 정답지가 없으면 강제 생성 (안전장치)
+            if (!target || target.length === 0) target = generateTarget();
+            
             target.forEach((row, r) => {
                 row.forEach((col, c) => {
                     const d = document.createElement('div');
@@ -413,11 +421,11 @@
                 
                 // --- 난이도 기믹 발동 ---
                 const lv = userData.level;
-                // 1. BLIND (Lv 6~)
+                // 1. BLIND (Lv 6~): 5초 뒤 정답지 사라짐
                 if (myRole==='solo' && lv >= 6 && sec === 5) {
                     document.getElementById('targetBoard').style.opacity = '0';
                 }
-                // 2. CHAOS (Lv 16~)
+                // 2. CHAOS (Lv 16~): 30초마다 보드 회전
                 if (myRole==='solo' && lv >= 16 && sec > 0 && sec % 30 === 0) {
                     document.getElementById('boardContainer').style.transform = `rotate(${sec * 3}deg)`;
                 }
@@ -466,17 +474,16 @@
                 return;
             }
 
-            // 기믹: MIRROR (Lv 11~15) - 클릭 좌표 반전
-            let targetR = r;
-            let targetC = c;
-            if (myRole === 'solo' && userData.level >= 11 && userData.level <= 15) {
-                targetC = 4 - c; // 가로 대칭
+            // 기믹: MIRROR (Lv 11~) - 입력 좌표 반전 (가로 대칭)
+            let tr = r, tc = c;
+            if (myRole === 'solo' && userData.level >= 11) {
+                tc = 4 - c; // 0->4, 1->3, 2->2 ...
             }
 
-            if (Math.abs(targetR - empty.r) + Math.abs(targetC - empty.c) === 1) {
-                board[empty.r][empty.c] = board[targetR][targetC];
-                board[targetR][targetC] = 'empty';
-                empty = {r: targetR, c: targetC};
+            if (Math.abs(tr - empty.r) + Math.abs(tc - empty.c) === 1) {
+                board[empty.r][empty.c] = board[tr][tc];
+                board[tr][tc] = 'empty';
+                empty = {r: tr, c: tc};
                 renderMain(); 
                 if(myRole !== 'solo') syncBoard(); 
                 checkWin();
@@ -494,8 +501,8 @@
             if (m) {
                 if (myRole === 'solo') {
                     isRunning = false; clearInterval(timerInterval); clearInterval(aiInterval);
-                    const reward = 100 + (userData.level * 10);
-                    alert(`🎉 AI보다 빨랐습니다! 승리! (+${reward}G)`);
+                    const reward = 100 + (userData.level * 20);
+                    alert(`🎉 승리! (+${reward}G) / 레벨업!`);
                     db.ref(`users/${currentUser.uid}`).update({ level: userData.level+1, coins: userData.coins+reward });
                     quitGame();
                 } else if (myRole !== 'watch') {
@@ -534,6 +541,7 @@
             document.getElementById('oppArea').style.display = 'block';
             document.getElementById('aiArea').style.display = 'none';
             document.getElementById('lvText').innerText = "BATTLE";
+            document.getElementById('gimmickText').innerText = "PVP MODE";
             
             db.ref(`rooms/${roomID}`).on('value', snap => {
                 const d = snap.val();

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RUBIK'S RACE - PRO ONLINE</title>
+    <title>RUBIK'S RACE - FINAL MASTER</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -11,33 +11,29 @@
         :root { 
             --bg: #050505; --panel: #121214; --accent: #00fbff; 
             --gold: #ffd700; --warn: #ff003c; --battle: #ff8800; 
-            --tile: 52px; --opp-tile: 14px; --target-tile: 20px; --gap: 4px; 
+            --tile: 62px; --opp-tile: 14px; --target-tile: 22px; --gap: 5px; 
         }
-        body { background: var(--bg); color: white; font-family: 'Pretendard', sans-serif; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow-x: hidden; }
-        .screen { display: none; width: 100%; max-width: 500px; padding: 15px; box-sizing: border-box; flex-direction: column; align-items: center; }
+        @media (max-width: 480px) { :root { --tile: 52px; --opp-tile: 12px; --target-tile: 18px; --gap: 4px; } }
+        body { background: var(--bg); color: white; font-family: 'Pretendard', sans-serif; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; touch-action: none; -webkit-user-select: none; }
+        .screen { display: none; width: 100%; max-width: 500px; padding: 15px; box-sizing: border-box; flex-direction: column; align-items: center; height: 100vh; justify-content: center; }
         .active { display: flex; }
-        .card { background: var(--panel); padding: 20px; border-radius: 20px; width: 100%; border: 1px solid #222; text-align: center; }
-        .btn { width: 100%; padding: 14px; background: var(--accent); color: #000; font-weight: bold; border: none; border-radius: 12px; cursor: pointer; margin-top: 8px; transition: 0.2s; }
-        .btn:disabled { background: #333; color: #666; cursor: not-allowed; }
-        
-        .board-grid { display: grid; grid-template-columns: repeat(5, var(--tile)); gap: var(--gap); background: #000; padding: 8px; border-radius: 10px; border: 1px solid #222; position: relative; }
-        .tile { width: var(--tile); height: var(--tile); border-radius: 4px; cursor: pointer; }
-        .tile.selected { outline: 3px solid white; z-index: 10; }
-        .target-box { display: grid; grid-template-columns: repeat(3, var(--target-tile)); gap: 3px; background: #000; padding: 5px; border-radius: 5px; border: 1px solid var(--accent); }
-        .target-tile { width: var(--target-tile); height: var(--target-tile); border-radius: 2px; }
-
-        .opp-section { background: #000; padding: 10px; border-radius: 12px; border: 1px solid var(--battle); margin-bottom: 10px; width: 100%; box-sizing: border-box; }
-        .mini-board { display: grid; grid-template-columns: repeat(5, var(--opp-tile)); gap: 2px; justify-content: center; margin-top: 5px; }
+        .card { background: var(--panel); padding: 20px; border-radius: 20px; width: 100%; border: 1px solid #222; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+        .btn { width: 100%; padding: 15px; background: var(--accent); color: #000; font-weight: bold; border: none; border-radius: 12px; cursor: pointer; margin-top: 10px; font-size: 1rem; }
+        .btn:active { transform: scale(0.95); opacity: 0.8; }
+        .board-grid { display: grid; grid-template-columns: repeat(5, var(--tile)); gap: var(--gap); background: #000; padding: 10px; border-radius: 15px; border: 1px solid #333; }
+        .tile { width: var(--tile); height: var(--tile); border-radius: 8px; cursor: pointer; }
+        .target-box { display: grid; grid-template-columns: repeat(3, var(--target-tile)); gap: 3px; background: #000; padding: 6px; border-radius: 10px; border: 2px solid var(--accent); }
+        .target-tile { width: var(--target-tile); height: var(--target-tile); border-radius: 4px; }
+        .opp-section { background: #000; padding: 10px; border-radius: 15px; border: 1px solid var(--battle); margin-bottom: 10px; width: 100%; box-sizing: border-box; }
+        .mini-board { display: grid; grid-template-columns: repeat(5, var(--opp-tile)); gap: 2px; justify-content: center; }
         .mini-tile { width: var(--opp-tile); height: var(--opp-tile); border-radius: 2px; }
-
-        .rank-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-        .rank-table td, th { padding: 10px; border-bottom: 1px solid #222; }
-        .inventory { display: flex; gap: 8px; overflow-x: auto; width: 100%; padding: 10px 0; }
-        .inv-slot { flex: 0 0 auto; background: #1a1a1a; border: 1px solid var(--accent); padding: 8px 12px; border-radius: 8px; font-size: 0.75rem; cursor: pointer; }
-
-        input { width: 100%; padding: 14px; background: #111; color: white; border: 1px solid #333; border-radius: 10px; margin-bottom: 10px; box-sizing: border-box; }
+        .inventory { display: flex; gap: 8px; overflow-x: auto; width: 100%; padding: 10px 0; -webkit-overflow-scrolling: touch; }
+        .inv-slot { flex: 0 0 auto; background: #1a1a1a; border: 1px solid var(--accent); padding: 8px 15px; border-radius: 10px; font-size: 0.8rem; }
+        input { width: 100%; padding: 15px; background: #111; color: white; border: 1px solid #333; border-radius: 12px; margin-bottom: 10px; font-size: 1rem; }
         .red { background: #FF003C; } .blue { background: #007BFF; } .green { background: #00FF6A; } 
         .yellow { background: #FFD700; } .orange { background: #FF8800; } .white { background: #FFFFFF; } .empty { background: #222; }
+        .rank-table { width: 100%; color: #ccc; font-size: 0.9rem; border-collapse: collapse; }
+        .rank-table td { padding: 12px; border-bottom: 1px solid #222; }
     </style>
 </head>
 <body>
@@ -55,55 +51,52 @@
 
     <div id="lobbyScreen" class="screen">
         <div class="card">
-            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <div style="text-align: left;">
-                    <h3 id="displayNick" style="margin:0;">-</h3>
-                    <span style="color:var(--gold);">💰 <span id="coinText">0</span></span>
-                </div>
-                <div style="display:flex; gap:5px;">
-                    <button onclick="showScreen('shopScreen')" style="background:#222; border:1px solid #444; border-radius:8px; padding:5px 10px; color:white; font-size:0.7rem;">🛒 상점</button>
-                    <button onclick="loadRankings()" style="background:#222; border:1px solid #444; border-radius:8px; padding:5px 10px; color:var(--gold); font-size:0.7rem;">🏆 순위</button>
+            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div style="text-align: left;"><h3 id="displayNick" style="margin:0;">-</h3><span style="color:var(--gold); font-weight:bold;">💰 <span id="coinText">0</span></span></div>
+                <div style="display:flex; gap:8px;">
+                    <button onclick="showScreen('shopScreen')" style="background:#222; border:1px solid #444; border-radius:10px; padding:8px; color:white;">🛒 상점</button>
+                    <button onclick="loadRankings()" style="background:#222; border:1px solid #444; border-radius:10px; padding:8px; color:var(--gold);">🏆 순위</button>
                 </div>
             </div>
-            <button id="soloBtn" class="btn" onclick="startSolo()">솔로 랭킹전 시작</button>
-            <input type="text" id="roomInput" placeholder="방 번호 입력" style="margin-top:20px;">
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                <button class="btn" onclick="joinRoom('battle')" style="background:var(--battle); color:white;">방 참가/생성</button>
-                <button class="btn" onclick="joinRoom('watch')" style="background:#333; color:white;">관전하기</button>
+            <button id="soloBtn" class="btn" onclick="startSolo()" style="background: linear-gradient(45deg, #00fbff, #007BFF);">솔로 랭킹전 시작</button>
+            <div style="margin-top:20px; background:#1a1a1a; padding:15px; border-radius:15px;">
+                <input type="text" id="roomInput" placeholder="방 번호 입력">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <button class="btn" onclick="joinRoom('battle')" style="background:var(--battle); color:white; margin-top:0;">대결 참가</button>
+                    <button class="btn" onclick="joinRoom('watch')" style="background:#444; color:white; margin-top:0;">관전하기</button>
+                </div>
             </div>
             <button class="btn" onclick="resetToLevel1()" style="margin-top:20px; font-size:0.7rem; color:#444; background:none; border:none;">⚠️ 데이터 초기화</button>
-            <button class="btn" onclick="auth.signOut()" style="background:none; color:#555; text-decoration:underline;">로그아웃</button>
+            <button class="btn" onclick="auth.signOut()" style="background:none; color:#555; text-decoration:underline; font-size:0.8rem; border:none;">로그아웃</button>
         </div>
     </div>
 
-    <div id="rankScreen" class="screen"><div class="card"><h2>🏆 TOP 10</h2><table class="rank-table"><tbody id="rankList"></tbody></table><button class="btn" onclick="showScreen('lobbyScreen')">닫기</button></div></div>
-    <div id="shopScreen" class="screen"><div class="card"><h2>🛒 상점</h2><div id="shopGrid" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;"></div><button class="btn" onclick="showScreen('lobbyScreen')">닫기</button></div></div>
+    <div id="shopScreen" class="screen"><div class="card"><h2 style="color:var(--gold)">🛒 ITEM SHOP</h2><div id="shopGrid" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;"></div><button class="btn" onclick="showScreen('lobbyScreen')" style="background:#333; color:white;">닫기</button></div></div>
+    <div id="rankScreen" class="screen"><div class="card"><h2>🏆 TOP 10 RANK</h2><table class="rank-table"><tbody id="rankList"></tbody></table><button class="btn" onclick="showScreen('lobbyScreen')" style="background:#333; color:white;">닫기</button></div></div>
 
     <div id="gameScreen" class="screen">
         <div id="oppArea" class="opp-section" style="display:none;">
-            <div style="display:flex; justify-content:space-between; font-size:0.75rem;">
+            <div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:5px;">
                 <div id="p1Tag"><span id="p1Nick">P1</span> <span id="p1Ready" style="color:var(--warn)">[대기]</span></div>
                 <div id="p2Tag"><span id="p2Nick">P2</span> <span id="p2Ready" style="color:var(--warn)">[대기]</span></div>
             </div>
-            <div style="display:flex; justify-content:space-around; margin-top:5px;">
+            <div style="display:flex; justify-content:space-around;">
                 <div id="p1Board" class="mini-board"></div>
                 <div id="p2Board" class="mini-board"></div>
             </div>
         </div>
-
         <div style="width:100%; display:flex; justify-content:space-between; align-items:center; background:#111; padding:10px; border-radius:15px; border:1px solid #222; box-sizing:border-box;">
             <div id="targetBoard" class="target-box"></div>
             <div style="text-align:right">
-                <div id="lvText" style="color:var(--accent); font-size:0.7rem;">LV 01</div>
-                <div id="timerText" style="font-size:1.5rem; font-weight:bold;">00:00</div>
-                <div id="memoryMsg" style="color:var(--warn); font-size:0.6rem;"></div>
+                <div id="lvText" style="color:var(--accent); font-size:0.8rem;">LV 01</div>
+                <div id="timerText" style="font-size:1.6rem; font-weight:bold;">00:00</div>
+                <div id="memoryMsg" style="color:var(--warn); font-size:0.7rem;"></div>
             </div>
         </div>
-
         <div class="inventory" id="inventoryBar"></div>
         <div id="mainBoard" class="board-grid"></div>
-        <button id="startBtn" class="btn" onclick="handleStartAction()">준비 완료</button>
-        <button onclick="leaveRoom()" style="background:none; color:#555; text-decoration:underline; margin-top:10px; border:none;">나가기</button>
+        <button id="startBtn" class="btn" onclick="handleStartAction()" style="background:var(--battle); color:white;">준비 완료</button>
+        <button onclick="leaveRoom()" style="background:none; color:#444; text-decoration:underline; margin-top:10px; border:none;">포기/방나가기</button>
     </div>
 
     <script>
@@ -123,10 +116,10 @@
 
         const COLORS = ['red', 'blue', 'green', 'yellow', 'orange', 'white'];
         const ITEMS = [
-            { id: 'hammer', name: '🔨 망치', price: 500 },
-            { id: 'swap', name: '🧲 자석', price: 300 },
-            { id: 'scan', name: '👁️ 투시경', price: 200 },
-            { id: 'dice', name: '🍀 주사위', price: 400 }
+            { id: 'hammer', name: '🔨 망치', price: 500, desc: '중앙 1칸 무효' },
+            { id: 'swap', name: '🧲 자석', price: 300, desc: '두 타일 교체' },
+            { id: 'scan', name: '👁️ 투시경', price: 200, desc: '5초 투시' },
+            { id: 'dice', name: '🍀 주사위', price: 400, desc: '랜덤 획득' }
         ];
 
         auth.onAuthStateChanged(user => {
@@ -134,17 +127,17 @@
                 currentUid = user.uid;
                 db.ref(`users/${user.uid}`).on('value', snap => {
                     userData = snap.val();
-                    if(!userData) { db.ref(`users/${user.uid}`).set({ nickname: "Player", coins: 1000, level: 1, items: {} }); }
-                    else { updateUI(); }
+                    if(!userData) db.ref(`users/${user.uid}`).set({ nickname: user.email.split('@')[0], coins: 1000, level: 1, items: {} });
+                    else updateUI();
                 });
                 showScreen('lobbyScreen');
-            } else { showScreen('authScreen'); }
+            } else showScreen('authScreen');
         });
 
         function updateUI() {
             document.getElementById('displayNick').innerText = userData.nickname;
             document.getElementById('coinText').innerText = userData.coins;
-            document.getElementById('soloBtn').innerText = `솔로 랭킹전 시작 (LV ${userData.level})`;
+            document.getElementById('soloBtn').innerText = `솔로 랭킹전 (LV ${userData.level})`;
             renderShop(); renderInventory();
         }
 
@@ -154,8 +147,8 @@
                 let list = []; snap.forEach(c => list.push(c.val()));
                 list.sort((a,b) => b.level - a.level);
                 let html = ""; list.forEach((u, i) => {
-                    html += `<tr style="${u.nickname === userData.nickname ? 'color:var(--accent)' : ''}">
-                        <td>${i+1}</td><td>${u.nickname}</td><td>LV ${u.level}</td></tr>`;
+                    const isMe = u.nickname === userData.nickname ? 'style="color:var(--accent); font-weight:bold;"' : '';
+                    html += `<tr ${isMe}><td>${i+1}</td><td>${u.nickname}</td><td>LV ${u.level}</td></tr>`;
                 });
                 document.getElementById('rankList').innerHTML = html;
             });
@@ -163,9 +156,9 @@
 
         function renderShop() {
             let h = ""; ITEMS.forEach(i => {
-                h += `<div style="background:#1a1a1a; padding:10px; border-radius:10px; border:1px solid #333;">
-                    <div style="font-size:0.75rem;">${i.name}</div>
-                    <button class="btn" onclick="buyItem('${i.id}', ${i.price})" style="font-size:0.6rem; background:var(--gold); padding:5px;">${i.price}G</button>
+                h += `<div style="background:#1a1a1a; padding:12px; border-radius:12px; border:1px solid #333; text-align:left;">
+                    <div style="font-size:0.8rem; font-weight:bold;">${i.name}</div>
+                    <button class="btn" onclick="buyItem('${i.id}', ${i.price})" style="font-size:0.7rem; background:var(--gold); padding:6px;">${i.price}G</button>
                 </div>`;
             });
             document.getElementById('shopGrid').innerHTML = h;
@@ -186,7 +179,6 @@
             document.getElementById('inventoryBar').innerHTML = h;
         }
 
-        // --- 방 로직 ---
         function joinRoom(type) {
             roomID = document.getElementById('roomInput').value;
             if(!roomID) return alert("방 번호 입력!");
@@ -201,7 +193,7 @@
                     } else if(!r.p2 && r.p1 !== currentUid) {
                         myRole = "p2";
                         rRef.update({ p2: currentUid, p2_nick: userData.nickname, p2_ready: false, status: 'ready' });
-                    } else { myRole = (r.p1 === currentUid) ? "p1" : "p2"; }
+                    } else myRole = (r.p1 === currentUid) ? "p1" : "p2";
                     initBattleUI();
                 } else { if(!r) return alert("방 없음"); myRole = "watch"; initBattleUI(); }
             });
@@ -211,48 +203,40 @@
             showScreen('gameScreen');
             document.getElementById('oppArea').style.display = 'block';
             document.getElementById('startBtn').innerText = (myRole === 'p1') ? "경기 시작" : "준비 완료";
-            
             db.ref(`rooms/${roomID}`).on('value', snap => {
                 const d = snap.val();
                 if(!d) return leaveRoom();
                 target = d.target; renderTarget();
-                
-                // 닉네임 & 준비상태 업데이트
                 document.getElementById('p1Nick').innerText = d.p1_nick || "대기";
                 document.getElementById('p2Nick').innerText = d.p2_nick || "대기";
-                document.getElementById('p1Ready').innerText = d.p1_ready ? "[준비완료]" : "[대기중]";
-                document.getElementById('p2Ready').innerText = d.p2_ready ? "[준비완료]" : "[대기중]";
-                document.getElementById('p1Ready').style.color = d.p1_ready ? "var(--green)" : "var(--warn)";
-                document.getElementById('p2Ready').style.color = d.p2_ready ? "var(--green)" : "var(--warn)";
-
+                document.getElementById('p1Ready').innerText = d.p1_ready ? "[준비됨]" : "[대기]";
+                document.getElementById('p2Ready').innerText = d.p2_ready ? "[준비됨]" : "[대기]";
+                document.getElementById('p1Ready').style.color = d.p1_ready ? "var(--accent)" : "var(--warn)";
+                document.getElementById('p2Ready').style.color = d.p2_ready ? "var(--accent)" : "var(--warn)";
                 if(d.p1_board) renderMini('p1Board', d.p1_board);
                 if(d.p2_board) renderMini('p2Board', d.p2_board);
-
-                // 둘다 준비되면 경기 시작 (방장이 시작버튼 누를수 있게 됨)
                 if(d.status === 'playing' && !isRunning) startLocalGame();
-                
-                // 승패 판정
                 if(d.winner) {
                     isRunning = false; clearInterval(timerInterval);
-                    if(d.winner === userData.nickname) alert("🏆 승리하였습니다!");
-                    else alert("💀 패배하였습니다...");
+                    alert(d.winner === userData.nickname ? "🏆 승리!" : "💀 패배...");
                     leaveRoom();
                 }
             });
         }
 
         function handleStartAction() {
+            if(myRole === 'solo') return startLocalGame();
             const rRef = db.ref(`rooms/${roomID}`);
             if(myRole === 'p1') {
                 rRef.once('value', snap => {
                     const d = snap.val();
                     if(d.p2_ready) rRef.update({ p1_ready: true, status: 'playing' });
-                    else alert("상대방이 준비되지 않았습니다!");
+                    else alert("상대가 준비되지 않았습니다!");
                 });
             } else if(myRole === 'p2') {
                 rRef.update({ p2_ready: true });
                 document.getElementById('startBtn').disabled = true;
-            } else if(myRole === 'solo') startLocalGame();
+            }
         }
 
         function startSolo() {
@@ -275,7 +259,6 @@
             document.getElementById('startBtn').style.display = 'none';
             if(timerInterval) clearInterval(timerInterval);
             timerInterval = setInterval(updateTimer, 1000);
-            
             initBoardData();
         }
 
@@ -316,6 +299,7 @@
                 d.className = `target-tile ${activeItem==='hammer'&&r===1&&c===1 ? 'empty' : col}`;
                 el.appendChild(d);
             }); });
+            document.getElementById('lvText').innerText = myRole === 'solo' ? `LV ${userData.level}` : "BATTLE";
         }
 
         function move(r, c) {
@@ -337,18 +321,21 @@
         function syncBoard() { if(myRole === 'p1' || myRole === 'p2') db.ref(`rooms/${roomID}/${myRole}_board`).set(board); }
 
         function checkWin() {
-            let m = true; for(let r=0; r<3; r++){ for(let c=0; c<3; c++){
-                if(activeItem==='hammer'&&r===1&&c===1)continue;
-                if(board[r+1][c+1] !== target[r][c]) m = false;
-            }}
+            let m = true; 
+            // 2행 2열 ~ 4행 4열 (인덱스 기준 1,1 ~ 3,3) 확인
+            for(let r=0; r<3; r++){
+                for(let c=0; c<3; c++){
+                    if(activeItem==='hammer'&&r===1&&c===1)continue;
+                    if(board[r+1][c+1] !== target[r][c]) m = false;
+                }
+            }
             if(m) {
                 if(myRole === 'solo') {
                     isRunning = false; clearInterval(timerInterval);
-                    alert("성공!"); db.ref(`users/${currentUid}`).update({ level: userData.level + 1, coins: userData.coins + 100 });
+                    alert("🎉 클리어!"); 
+                    db.ref(`users/${currentUid}`).update({ level: userData.level + 1, coins: userData.coins + 150 });
                     leaveRoom();
-                } else {
-                    db.ref(`rooms/${roomID}`).update({ winner: userData.nickname });
-                }
+                } else db.ref(`rooms/${roomID}`).update({ winner: userData.nickname });
             }
         }
 
@@ -363,6 +350,7 @@
             if(!isRunning) return;
             if(id === 'hammer') { activeItem = 'hammer'; renderTarget(); }
             else if(id === 'swap') { activeItem = 'swap'; alert("교체할 두 타일 클릭"); }
+            else if(id === 'scan') { document.getElementById('targetBoard').style.visibility='visible'; setTimeout(()=>document.getElementById('targetBoard').style.visibility='hidden', 5000); }
             db.ref(`users/${currentUid}/items/${id}`).set(userData.items[id] - 1);
         }
 
@@ -375,7 +363,7 @@
         function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
         function handleAuth(m) {
             const e = document.getElementById('email').value, p = document.getElementById('password').value, n = document.getElementById('nickInput').value;
-            if(m==='signup') auth.createUserWithEmailAndPassword(e, p).then(r => db.ref(`users/${r.user.uid}`).set({nickname:n, coins:1000, level:1, items:{}}));
+            if(m==='signup') auth.createUserWithEmailAndPassword(e, p).then(r => db.ref(`users/${r.user.uid}`).set({nickname:n||"Player", coins:1000, level:1, items:{}}));
             else auth.signInWithEmailAndPassword(e, p);
         }
         function resetToLevel1() { if(confirm("초기화?")) db.ref(`users/${currentUid}/level`).set(1); }

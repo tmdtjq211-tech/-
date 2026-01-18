@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RUBIK'S RACE - FINAL PATCH</title>
+    <title>RUBIK'S RACE - FIXED</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
@@ -28,7 +28,7 @@
         
         .card { background: var(--panel); padding: 20px; border-radius: 20px; width: 100%; border: 1px solid #222; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 95%; box-sizing: border-box; z-index: 5; }
         .btn { width: 100%; padding: 14px; background: var(--accent); color: #000; font-weight: bold; border: none; border-radius: 12px; cursor: pointer; margin-top: 8px; font-size: 1rem; }
-        .btn:disabled { background: #333; color: #777; }
+        .btn:disabled { background: #444; color: #888; cursor: not-allowed; opacity: 0.7; }
         .btn-sub { background: #222; border: 1px solid #444; color: #ccc; font-size: 0.8rem; padding: 8px 12px; border-radius: 8px; cursor: pointer; }
 
         input { width: 100%; padding: 14px; background: #111; color: white; border: 1px solid #333; border-radius: 10px; margin-bottom: 10px; box-sizing: border-box; font-size: 1rem; }
@@ -39,6 +39,7 @@
         .tile { width: var(--tile); height: var(--tile); border-radius: 6px; cursor: pointer; transition: transform 0.1s; }
         .tile.selected { border: 2px solid white; transform: scale(0.95); }
         
+        /* 중앙 가이드라인 */
         .center-guide {
             position: absolute; top: calc(10px + var(--tile) + var(--gap) - 2px); left: calc(10px + var(--tile) + var(--gap) - 2px);
             width: calc(var(--tile)*3 + var(--gap)*2); height: calc(var(--tile)*3 + var(--gap)*2);
@@ -46,29 +47,29 @@
             box-shadow: 0 0 15px rgba(0, 251, 255, 0.15);
         }
 
-        /* 정답지 박스 (수정: 크기 고정 및 트랜지션) */
-        .target-box { 
-            display: grid; grid-template-columns: repeat(3, var(--target-tile)); gap: 3px; 
-            background: #111; padding: 5px; border-radius: 8px; border: 2px solid #444; 
-            min-width: calc(var(--target-tile)*3 + 15px); min-height: calc(var(--target-tile)*3 + 15px);
-            transition: opacity 0.5s; opacity: 1; /* 기본 보임 */
-        }
+        .target-box { display: grid; grid-template-columns: repeat(3, var(--target-tile)); gap: 3px; background: #111; padding: 5px; border-radius: 8px; border: 2px solid #444; min-height: 80px; min-width: 80px; opacity: 1; }
         .target-tile { width: var(--target-tile); height: var(--target-tile); border-radius: 2px; }
         
-        /* AI & 상대방 영역 */
+        /* 상대방/AI 영역 */
         .opp-section { width: 100%; background: #080808; padding: 10px; border-radius: 12px; border: 1px solid #333; margin-bottom: 10px; display: none; box-sizing: border-box; }
         .ai-section { width: 100%; background: #150015; padding: 10px; border-radius: 12px; border: 1px solid var(--ai); margin-bottom: 10px; display: none; box-sizing: border-box; }
         
         .mini-board { display: grid; grid-template-columns: repeat(5, var(--opp-tile)); gap: 2px; justify-content: center; }
         .mini-tile { width: var(--opp-tile); height: var(--opp-tile); border-radius: 2px; }
 
-        /* AI Progress Bar */
         .ai-bar-bg { width: 100%; height: 6px; background: #333; border-radius: 3px; margin-top: 8px; overflow: hidden; }
         .ai-bar-fill { height: 100%; background: var(--ai); width: 0%; transition: width 0.5s linear; box-shadow: 0 0 10px var(--ai); }
 
         .inventory { display: flex; gap: 8px; overflow-x: auto; width: 100%; padding: 5px 0; margin-bottom: 5px; }
         .inv-slot { flex: 0 0 auto; background: #1a1a1a; border: 1px solid #333; padding: 6px 12px; border-radius: 8px; font-size: 0.75rem; cursor: pointer; color:#ccc; }
         
+        /* 게임 준비 오버레이 (버튼 겹침 방지) */
+        #readyOverlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 100;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+
         .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-height: 50vh; overflow-y: auto; width: 100%; }
         .rank-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; color: #ccc; margin-top: 10px; }
         .rank-table td, th { padding: 8px; border-bottom: 1px solid #222; }
@@ -107,7 +108,7 @@
                 <p style="margin:0 0 10px 0; color:#888; font-size:0.8rem;">멀티플레이</p>
                 <input type="text" id="roomInput" placeholder="방 번호">
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                    <button class="btn" style="margin:0; background:var(--battle); color:white;" onclick="joinRoom('battle')">대결하기</button>
+                    <button class="btn" style="margin:0; background:var(--battle); color:white;" onclick="joinRoom('battle')">대결 입장</button>
                     <button class="btn" style="margin:0; background:#333; color:white;" onclick="joinRoom('watch')">관전하기</button>
                 </div>
             </div>
@@ -120,6 +121,13 @@
 
     <div id="gameScreen" class="screen">
         
+        <div id="readyOverlay">
+            <h2 id="readyTitle" style="color:var(--accent); margin-bottom:10px;">게임 준비</h2>
+            <p id="readyMsg" style="color:#ccc; margin-bottom:20px; font-size:0.9rem;">...</p>
+            <button id="readyBtn" class="btn" onclick="handleReadyAction()" style="width:200px;">준비 / 시작</button>
+            <button onclick="quitGame()" style="background:none; color:#666; border:none; text-decoration:underline; margin-top:20px;">나가기</button>
+        </div>
+
         <div id="aiArea" class="ai-section">
             <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:5px; color:var(--ai);">
                 <span>🤖 AI (LV.<span id="aiLevelText">1</span>)</span>
@@ -133,7 +141,7 @@
 
         <div id="oppArea" class="opp-section">
             <div style="display:flex; justify-content:space-between; font-size:0.7rem; margin-bottom:5px;">
-                <div id="p1Tag">P1: <span id="p1Nick">-</span> <span id="p1Status" style="color:#666">[대기]</span></div>
+                <div id="p1Tag">P1(방장): <span id="p1Nick">-</span> <span id="p1Status" style="color:#666">[대기]</span></div>
                 <div id="p2Tag">P2: <span id="p2Nick">-</span> <span id="p2Status" style="color:#666">[대기]</span></div>
             </div>
             <div style="display:flex; justify-content:space-around;">
@@ -148,7 +156,7 @@
                 <div id="targetBoard" class="target-box"></div>
             </div>
             <div style="text-align:right; margin-top:5px;">
-                <div id="lvText" style="color:var(--accent); font-size:0.9rem; font-weight:bold;">LV.1</div>
+                <div id="lvText" style="color:var(--accent); font-size:0.9rem; font-weight:bold;">LV.-</div>
                 <div id="gimmickText" style="font-size:0.7rem; color:var(--warn); margin-bottom:2px;">NORMAL</div>
                 <div id="timerText" style="font-size:1.8rem; font-weight:bold; font-variant-numeric: tabular-nums;">00:00</div>
             </div>
@@ -159,11 +167,6 @@
         <div id="boardContainer" class="board-container">
             <div class="center-guide"></div>
             <div id="mainBoard" class="board-grid"></div>
-        </div>
-
-        <div style="width:100%; max-width:400px; margin-top:10px; display:flex; gap:10px;">
-            <button id="mainBtn" class="btn" onclick="handleMainBtn()">준비 / 시작</button>
-            <button class="btn" onclick="quitGame()" style="background:#222; color:#888; width:30%;">포기</button>
         </div>
     </div>
 
@@ -194,13 +197,18 @@
             { id: 'dice', name: '🍀 주사위', price: 400, desc: '랜덤 아이템 획득' }
         ];
 
+        // --- 인증 및 데이터 로딩 (안전장치 추가) ---
         auth.onAuthStateChanged(user => {
             if (user) {
                 currentUser = user;
                 db.ref(`users/${user.uid}`).on('value', snap => {
                     userData = snap.val();
-                    if (!userData) db.ref(`users/${user.uid}`).set({ nickname: "Player", coins: 1000, level: 1, items: {} });
-                    else updateLobbyUI();
+                    // 데이터가 없거나 깨졌을 경우 기본값 할당
+                    if (!userData) {
+                        userData = { nickname: "Player", coins: 1000, level: 1, items: {} };
+                        db.ref(`users/${user.uid}`).set(userData);
+                    }
+                    updateLobbyUI();
                 });
                 showScreen('lobbyScreen');
             } else showScreen('authScreen');
@@ -222,6 +230,8 @@
         }
 
         function updateLobbyUI() {
+            // userData가 로드되기 전이라면 방어
+            if(!userData) return;
             document.getElementById('displayNick').innerText = userData.nickname;
             document.getElementById('coinText').innerText = userData.coins;
             document.getElementById('shopCoinText').innerText = userData.coins;
@@ -248,7 +258,7 @@
         function renderInventory() {
             const el = document.getElementById('inventoryBar');
             el.innerHTML = '';
-            if (userData.items) {
+            if (userData && userData.items) {
                 Object.keys(userData.items).forEach(id => {
                     if (userData.items[id] > 0) {
                         const div = document.createElement('div');
@@ -271,14 +281,12 @@
             });
         }
 
-        // --- AI 시스템 (리얼타임) ---
+        // --- AI 로직 ---
         function initAI() {
-            const lv = userData.level;
-            // 난이도 설정
+            const lv = userData.level || 1;
             aiTimeMax = Math.max(20, 100 - (lv * 4)); 
             aiTimeCur = 0;
             
-            // AI 보드 초기화
             let p = []; COLORS.forEach(c => { for(let i=0; i<4; i++) p.push(c); }); p.push(COLORS[0]); p.sort(()=>Math.random()-0.5);
             aiBoard = [];
             for(let r=0; r<5; r++){
@@ -289,7 +297,6 @@
                 }
                 aiBoard.push(row); 
             }
-            
             renderMini('aiBoard', aiBoard);
             document.getElementById('aiLevelText').innerText = lv;
             document.getElementById('aiStatusText').innerText = "준비";
@@ -297,8 +304,7 @@
         }
 
         function startAILoop() {
-            const lv = userData.level;
-            // AI 움직임 속도 (LV 1: 1.5초 ~ LV 20: 0.2초)
+            const lv = userData.level || 1;
             let baseSpeed = Math.max(200, 1500 - (lv * 60)); 
             document.getElementById('aiStatusText').innerText = "생각 중...";
 
@@ -306,8 +312,6 @@
 
             function aiStep() {
                 if (!isRunning) return;
-
-                // 1. AI 움직임 시뮬레이션
                 let neighbors = [];
                 const dr = [-1, 1, 0, 0], dc = [0, 0, -1, 1];
                 for(let i=0; i<4; i++) {
@@ -321,8 +325,6 @@
                     aiEmpty = pick;
                     renderMini('aiBoard', aiBoard);
                 }
-
-                // 2. 시간(게이지) 체크
                 let elapsed = (Date.now() - startTime) / 1000;
                 let pct = (elapsed / aiTimeMax) * 100;
                 document.getElementById('aiProgressBar').style.width = `${Math.min(100, pct)}%`;
@@ -333,26 +335,28 @@
                     quitGame();
                     return;
                 }
-
-                // 3. 다음 움직임 예약 (랜덤 딜레이)
                 let nextDelay = baseSpeed + (Math.random() * 200);
                 aiInterval = setTimeout(aiStep, nextDelay);
             }
             aiStep();
         }
 
-        // --- 게임 시작 ---
+        // --- 게임 시작 (준비 화면) ---
         function startSolo() {
+            if(!userData) return alert("데이터 로딩중... 잠시만요");
             myRole = 'solo';
             showScreen('gameScreen');
             document.getElementById('oppArea').style.display = 'none';
             document.getElementById('aiArea').style.display = 'block';
-            document.getElementById('mainBtn').innerText = "게임 시작";
-            document.getElementById('mainBtn').disabled = false;
-            document.getElementById('mainBtn').style.display = 'block';
             
-            // 난이도 텍스트
-            const lv = userData.level;
+            // 준비 오버레이 설정
+            document.getElementById('readyOverlay').style.display = 'flex';
+            document.getElementById('readyTitle').innerText = "AI 솔로 랭킹전";
+            document.getElementById('readyMsg').innerText = `현재 레벨: ${userData.level}\nAI를 이기세요!`;
+            document.getElementById('readyBtn').innerText = "게임 시작";
+            document.getElementById('readyBtn').disabled = false;
+
+            const lv = userData.level || 1;
             let mode = "NORMAL";
             if (lv >= 6 && lv <= 10) mode = "🚫 BLIND";
             else if (lv >= 11 && lv <= 15) mode = "↔️ MIRROR";
@@ -361,17 +365,36 @@
             document.getElementById('gimmickText').innerText = mode;
             document.getElementById('lvText').innerText = `LV.${lv}`;
 
-            // ★ 수정됨: 정답지 강제 생성 및 표시
+            // 정답 및 보드 미리 세팅
             target = generateTarget();
-            // 타겟이 없으면 다시 생성 보장
             if(!target || target.length === 0) target = generateTarget();
-            
-            renderTarget(); // 즉시 렌더링
+            renderTarget();
+            initBoard();
             initAI();
             
-            board = []; document.getElementById('mainBoard').innerHTML = '';
-            document.getElementById('targetBoard').style.opacity = '1';
             isRunning = false;
+        }
+
+        // --- 버튼 핸들러 (멀티/솔로 분기) ---
+        function handleReadyAction() {
+            if (myRole === 'solo') {
+                document.getElementById('readyOverlay').style.display = 'none';
+                startGameLoop();
+            } else if (myRole === 'p1') {
+                // 방장: 상대가 준비했는지 체크하고 시작
+                db.ref(`rooms/${roomID}`).once('value', snap => {
+                    if (snap.val() && snap.val().p2Ready) {
+                        db.ref(`rooms/${roomID}`).update({ status: 'playing' });
+                    } else {
+                        alert("상대방이 아직 준비하지 않았습니다.");
+                    }
+                });
+            } else if (myRole === 'p2') {
+                // 참가자: 준비 완료 신호 보냄
+                db.ref(`rooms/${roomID}`).update({ p2Ready: true });
+                document.getElementById('readyBtn').innerText = "방장의 시작을 대기중...";
+                document.getElementById('readyBtn').disabled = true;
+            }
         }
 
         function generateTarget() {
@@ -384,7 +407,6 @@
         function renderTarget() {
             const el = document.getElementById('targetBoard');
             el.innerHTML = '';
-            // 안전장치: 데이터 없으면 빈칸이라도 그림 (UI 깨짐 방지)
             if (!target || target.length === 0) {
                 for(let i=0; i<9; i++) {
                     const d = document.createElement('div'); d.className = 'target-tile empty'; 
@@ -402,26 +424,12 @@
             });
         }
 
-        function handleMainBtn() {
-            if (myRole === 'solo') startGameLoop();
-            else if (myRole === 'p1') db.ref(`rooms/${roomID}`).update({ status: 'playing' });
-            else if (myRole === 'p2') {
-                db.ref(`rooms/${roomID}`).update({ p2Ready: true });
-                document.getElementById('mainBtn').innerText = "준비 완료";
-                document.getElementById('mainBtn').disabled = true;
-            }
-        }
-
         function startGameLoop() {
             isRunning = true;
             startTime = Date.now();
-            document.getElementById('mainBtn').style.display = 'none';
+            document.getElementById('readyOverlay').style.display = 'none'; // 오버레이 제거
             
-            // ★ 게임 시작 시 정답지 한번 더 확실하게 렌더링
-            renderTarget();
-            document.getElementById('targetBoard').style.opacity = '1'; 
-            
-            initBoard();
+            renderTarget(); // 정답지 다시 그림 (안전장치)
             
             if (myRole === 'solo') startAILoop(); 
             if (myRole !== 'solo') syncBoard();
@@ -435,7 +443,7 @@
                 document.getElementById('timerText').innerText = new Date(sec*1000).toISOString().substr(14,5);
                 
                 // 기믹
-                const lv = userData.level;
+                const lv = userData ? userData.level : 1;
                 if (myRole==='solo' && lv >= 6 && sec === 5) {
                     document.getElementById('targetBoard').style.opacity = '0'; // BLIND
                 }
@@ -486,7 +494,6 @@
                 return;
             }
 
-            // MIRROR 기믹
             let tr = r, tc = c;
             if (myRole === 'solo' && userData.level >= 11 && userData.level <= 15) tc = 4 - c;
 
@@ -508,7 +515,7 @@
             }
             if (m) {
                 if (myRole === 'solo') {
-                    isRunning = false; clearInterval(timerInterval); if(aiInterval) clearTimeout(aiInterval);
+                    isRunning = false; clearInterval(timerInterval); clearInterval(aiInterval);
                     const reward = 100 + (userData.level * 20);
                     alert(`🎉 AI 승리! (+${reward}G) / 레벨업!`);
                     db.ref(`users/${currentUser.uid}`).update({ level: userData.level+1, coins: userData.coins+reward });
@@ -519,7 +526,7 @@
             }
         }
 
-        // --- 방 로직 ---
+        // --- 방 로직 (멀티) ---
         function joinRoom(mode) {
             roomID = document.getElementById('roomInput').value;
             if (!roomID) return alert("방 번호 입력");
@@ -530,7 +537,6 @@
                 if (mode === 'battle') {
                     if (!d) {
                         myRole = 'p1';
-                        // ★ 멀티에서도 정답지 강제 생성
                         rRef.set({ p1: currentUser.uid, p1Name: userData.nickname, p1Ready: false, status: 'waiting', target: generateTarget() });
                         rRef.onDisconnect().remove();
                     } else if (!d.p2) {
@@ -552,16 +558,26 @@
             document.getElementById('lvText').innerText = "BATTLE";
             document.getElementById('gimmickText').innerText = "PVP";
             
+            // 멀티용 오버레이 설정
+            document.getElementById('readyOverlay').style.display = 'flex';
+            document.getElementById('readyTitle').innerText = (myRole === 'watch') ? "관전 중" : "멀티 대결";
+            document.getElementById('readyMsg').innerText = "상대방을 기다리는 중...";
+            
+            if (myRole === 'p1') {
+                document.getElementById('readyBtn').innerText = "상대 준비 대기중 (비활성)";
+                document.getElementById('readyBtn').disabled = true; 
+            } else if (myRole === 'p2') {
+                document.getElementById('readyBtn').innerText = "준비 완료 (클릭)";
+                document.getElementById('readyBtn').disabled = false;
+            } else {
+                document.getElementById('readyOverlay').style.display = 'none'; // 관전자는 바로 봄
+            }
+
             db.ref(`rooms/${roomID}`).on('value', snap => {
                 const d = snap.val();
                 if (!d) return quitGame();
 
-                if (d.target) { 
-                    target = d.target; 
-                    renderTarget(); 
-                    // 멀티 정답지 투명도 강제 복구
-                    document.getElementById('targetBoard').style.opacity = '1';
-                }
+                if (d.target) { target = d.target; renderTarget(); document.getElementById('targetBoard').style.opacity = '1'; }
 
                 document.getElementById('p1Nick').innerText = d.p1Name || '-';
                 document.getElementById('p2Nick').innerText = d.p2Name || '-';
@@ -571,10 +587,17 @@
                 if(d.board_p1) renderMini('p1Board', d.board_p1);
                 if(d.board_p2) renderMini('p2Board', d.board_p2);
 
-                const btn = document.getElementById('mainBtn');
-                if (myRole==='p1') { btn.innerText = "게임 시작"; btn.disabled = !d.p2Ready || d.status==='playing'; }
-                else if (myRole==='p2') { btn.innerText = d.p2Ready?"준비 완료":"준비 하기"; btn.disabled = d.p2Ready; }
-                else btn.style.display='none';
+                // 방장 버튼 상태 업데이트 (P2가 준비했으면 활성화)
+                if (myRole === 'p1') {
+                    if (d.p2Ready) {
+                        document.getElementById('readyBtn').innerText = "게임 시작 (클릭)";
+                        document.getElementById('readyBtn').disabled = false;
+                        document.getElementById('readyMsg').innerText = "상대가 준비되었습니다!";
+                    } else {
+                        document.getElementById('readyBtn').innerText = "상대 준비 대기중...";
+                        document.getElementById('readyBtn').disabled = true;
+                    }
+                }
 
                 if (d.status === 'playing' && !isRunning && myRole !== 'watch') startGameLoop();
 
@@ -606,7 +629,6 @@
             else if (id === 'swap') { activeItem='swap'; alert("두 타일 클릭"); }
             else if (id === 'scan') { 
                 document.getElementById('targetBoard').style.opacity='1'; 
-                // 블라인드 모드일 경우 5초 후 다시 가림
                 setTimeout(()=> { 
                     if(myRole==='solo' && userData.level>=6) document.getElementById('targetBoard').style.opacity='0'; 
                 }, 5000); 
@@ -627,9 +649,6 @@
                 roomID = "";
             }
             showScreen('lobbyScreen');
-            document.getElementById('mainBtn').style.display = 'block';
-            document.getElementById('mainBtn').disabled = false;
-            // 정답지 복구
             document.getElementById('targetBoard').style.opacity = '1';
         }
     </script>
